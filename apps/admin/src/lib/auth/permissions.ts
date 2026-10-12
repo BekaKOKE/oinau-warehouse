@@ -41,6 +41,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   MANAGER: 'Менеджер',
   CONTENT_MANAGER: 'Контент-менеджер',
   VIEWER: 'Наблюдатель',
+  WAREHOUSE: 'Кладовщик',
 };
 
 export const PERMISSION_LABELS: Record<PermissionCode, string> = {

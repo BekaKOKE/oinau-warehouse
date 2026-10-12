@@ -24,6 +24,15 @@ from tests.media_helpers import make_media
 SUMMARY = "/api/v1/admin/catalog/summary"
 PRODUCTS = "/api/v1/admin/products"
 
+# Роли с правом catalog.read. У кладовщика (WAREHOUSE) его нет.
+CATALOG_READERS = [
+    UserRole.SUPERADMIN,
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+    UserRole.CONTENT_MANAGER,
+    UserRole.VIEWER,
+]
+
 
 async def test_empty_catalog_returns_zeros(api: AsyncClient, admin: Headers) -> None:
     response = await api.get(SUMMARY, headers=admin)
@@ -231,11 +240,11 @@ async def test_summary_exposes_no_exact_quantities(
 
 
 # ================================================================== права
-@pytest.mark.parametrize("role", list(UserRole))
+@pytest.mark.parametrize("role", CATALOG_READERS)
 async def test_summary_available_to_every_catalog_reader(
     api: AsyncClient, login_as, role: UserRole
 ) -> None:
-    """catalog.read есть у всех пяти ролей — сводка доступна всем."""
+    """catalog.read есть у этих пяти ролей — сводка доступна каждой из них."""
     headers = await login_as(role)
     assert (await api.get(SUMMARY, headers=headers)).status_code == 200
 

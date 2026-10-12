@@ -95,6 +95,8 @@ const NAV_BY_ROLE: Record<UserRole, string[]> = {
   MANAGER: ['Dashboard', 'Заявки', 'Товары', 'Склад', 'Импорт / экспорт'],
   // У VIEWER есть request.read — заявки он видит, но только читает.
   VIEWER: ['Dashboard', 'Заявки', 'Товары', 'Склад', 'Импорт / экспорт'],
+  // У кладовщика пока нет ни одного права — виден только Dashboard.
+  WAREHOUSE: ['Dashboard'],
 };
 
 async function navLinks(role: UserRole) {

@@ -6552,7 +6552,7 @@ export interface components {
          *     блокировки и разный жизненный цикл.
          * @enum {string}
          */
-        UserRole: "SUPERADMIN" | "ADMIN" | "MANAGER" | "CONTENT_MANAGER" | "VIEWER";
+        UserRole: "SUPERADMIN" | "ADMIN" | "MANAGER" | "CONTENT_MANAGER" | "VIEWER" | "WAREHOUSE";
         /**
          * UserUpdate
          * @description Частичное изменение: незаданные поля не трогаются.

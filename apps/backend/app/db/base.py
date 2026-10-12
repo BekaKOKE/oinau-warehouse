@@ -109,3 +109,4 @@ from app.modules.notifications import models as notification_models  # noqa: E40
 from app.modules.pricing import models as pricing_models  # noqa: E402,F401
 from app.modules.requests import models as request_models  # noqa: E402,F401
 from app.modules.users import models as user_models  # noqa: E402,F401
+from app.modules.warehouse import models as warehouse_models  # noqa: E402,F401

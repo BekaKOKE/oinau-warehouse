@@ -168,6 +168,7 @@ erDiagram
         numeric reserved "заложено под 1С"
         varchar sync_source "manual|excel|1c"
         timestamptz updated_at
+        timestamptz reported_at "последнее упоминание в выгрузке 1С"
     }
 ```
 
@@ -189,7 +190,7 @@ erDiagram
         bigint id PK
         citext email UK "регистронезависимо"
         varchar password_hash "argon2"
-        varchar role "SUPERADMIN|ADMIN|MANAGER|CONTENT_MANAGER|VIEWER"
+        varchar role "SUPERADMIN|ADMIN|MANAGER|CONTENT_MANAGER|VIEWER|WAREHOUSE"
         boolean is_active
         smallint failed_login_count
         timestamptz locked_until
@@ -247,6 +248,69 @@ erDiagram
     }
 ```
 
+### 2.4 Складская упаковка
+
+Одна заявка — один сводный документ и несколько упаковок. Списывает
+товар в 1С только сводный документ; упаковки — состав коробок и QR-коды.
+Цен в этих таблицах нет. Решения — в ADR-0007.
+
+```mermaid
+erDiagram
+    requests ||--o{ warehouse_documents : "упаковывается"
+    warehouses ||--o{ warehouse_documents : "склад отгрузки"
+    users |o--o{ warehouse_documents : "создал, упаковал, аннулировал"
+    warehouse_documents ||--o{ warehouse_document_lines : "строки"
+    warehouse_documents ||--o{ warehouse_packages : "упаковки"
+    warehouse_document_lines ||--o{ warehouse_packages : "один товар в коробке"
+    request_items ||--o{ warehouse_document_lines : "позиция заявки"
+    products ||--o{ warehouse_document_lines : "товар обязателен"
+
+    warehouse_documents {
+        bigint id PK
+        uuid uuid UK "идентификатор для 1С"
+        varchar number UK "WH-2026-000123"
+        bigint request_id FK "один действующий на заявку"
+        bigint warehouse_id FK
+        varchar status "CREATED|PACKED|CANCELLED"
+        smallint package_count "для подписи 3/5"
+        timestamptz stock_checked_at "момент проверки остатка"
+        timestamptz stock_data_as_of
+        varchar idempotency_key UK
+        timestamptz packed_at
+        timestamptz cancelled_at
+        text cancel_reason
+        varchar external_id UK "документ в 1С"
+        timestamptz exported_at "1С прочитала документ"
+        timestamptz write_off_confirmed_at "1С списала товар"
+        timestamptz cancel_exported_at "1С прочитала аннулирование"
+    }
+    warehouse_document_lines {
+        bigint id PK
+        bigint document_id FK
+        bigint request_item_id FK
+        bigint product_id FK
+        varchar sku_snapshot
+        varchar name_snapshot
+        varchar unit_snapshot
+        varchar color_name_snapshot
+        numeric quantity
+        numeric available_at_check "остаток до этого документа"
+    }
+    warehouse_packages {
+        bigint id PK
+        uuid uuid UK "токен QR-кода"
+        bigint document_id FK
+        bigint line_id FK
+        smallint seq "1…N внутри документа"
+        numeric quantity
+    }
+```
+
+Номер документа выдаёт отдельная последовательность
+`warehouse_document_number_seq`: он не повторяется даже после
+аннулирования. Подпись упаковки `WH-2026-000123-3/5` не хранится, а
+собирается из номера документа, `seq` и `package_count`.
+
 ---
 
 ## 3. Справочник таблиц
@@ -277,6 +341,9 @@ erDiagram
 | 22  | `request_status_history`   | История смены статусов                                                                                                                                   | каскад             |
 | 23  | `audit_log`                | Журнал изменений                                                                                                                                         | не удаляется       |
 | 24  | `import_jobs`              | История Excel-импортов каталога (этап 5E): метаданные файла, итог проверки, ошибки JSONB. Сам файл не хранится — см. `docs/api-catalog-import-export.md` | не удаляется       |
+| 25  | `warehouse_documents`      | Сводный складской документ заявки — единственный документ списания для 1С                                                                                | не удаляется       |
+| 26  | `warehouse_document_lines` | Строки документа: снапшот позиций заявки и остаток на момент проверки                                                                                    | каскад             |
+| 27  | `warehouse_packages`       | Упаковки: один товар в коробке, токен QR-кода                                                                                                            | каскад             |
 
 ### Где `deleted_at`, а где `is_active`
 
@@ -333,30 +400,44 @@ ALTER TABLE price_tiers ADD CONSTRAINT no_overlapping_tiers
 
 ### 4.2 CHECK — прочие важные
 
-| Таблица                    | Ограничение             | Что предотвращает                                                      |
-| -------------------------- | ----------------------- | ---------------------------------------------------------------------- |
-| `product_attribute_values` | `num_nonnulls(...) = 1` | Значение характеристики заполнено ровно в одной типизированной колонке |
-| `categories`               | `parent_id <> id`       | Категория — сама себе родитель                                         |
-| `requests`                 | `bin ~ '^[0-9]{12}$'`   | Мусор в поле БИН                                                       |
-| `requests`                 | `length(phone) >= 5`    | Пустой телефон при обязательном контакте                               |
-| `price_tiers`              | `max_qty >= min_qty`    | Диапазон наизнанку                                                     |
-| `stocks`                   | `quantity >= 0`         | Отрицательный остаток                                                  |
-| `products` и др.           | `status IN (...)`       | Неизвестный статус из импорта                                          |
+| Таблица                    | Ограничение                                                                        | Что предотвращает                                                                    |
+| -------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `product_attribute_values` | `num_nonnulls(...) = 1`                                                            | Значение характеристики заполнено ровно в одной типизированной колонке               |
+| `categories`               | `parent_id <> id`                                                                  | Категория — сама себе родитель                                                       |
+| `requests`                 | `bin ~ '^[0-9]{12}$'`                                                              | Мусор в поле БИН                                                                     |
+| `requests`                 | `length(phone) >= 5`                                                               | Пустой телефон при обязательном контакте                                             |
+| `price_tiers`              | `max_qty >= min_qty`                                                               | Диапазон наизнанку                                                                   |
+| `stocks`                   | `quantity >= 0`                                                                    | Отрицательный остаток                                                                |
+| `products` и др.           | `status IN (...)`                                                                  | Неизвестный статус из импорта                                                        |
+| `users`                    | `role IN (...)`                                                                    | Неизвестная роль. В списке шесть ролей, включая `WAREHOUSE`                          |
+| `warehouse_documents`      | `status IN (...)`                                                                  | Неизвестный статус документа                                                         |
+| `warehouse_documents`      | `package_count > 0`                                                                | Документ без упаковок                                                                |
+| `warehouse_documents`      | `status <> 'PACKED' OR packed_at IS NOT NULL`                                      | Упакованный документ без времени упаковки                                            |
+| `warehouse_documents`      | `(status = 'CANCELLED') = (cancelled_at IS NOT NULL)`                              | Аннулирование без времени и время без аннулирования                                  |
+| `warehouse_documents`      | `exported_at IS NULL OR packed_at IS NOT NULL`                                     | 1С видит документ, который не был упакован                                           |
+| `warehouse_documents`      | `write_off_confirmed_at IS NULL OR exported_at IS NOT NULL`                        | Списание по документу, который 1С не читала                                          |
+| `warehouse_documents`      | `cancel_exported_at IS NULL OR (status = 'CANCELLED' AND exported_at IS NOT NULL)` | 1С «прочитала аннулирование» документа, который не аннулирован или ей не передавался |
+| `warehouse_document_lines` | `quantity > 0`                                                                     | Пустая строка документа                                                              |
+| `warehouse_packages`       | `quantity > 0`                                                                     | Пустая упаковка                                                                      |
+| `warehouse_packages`       | `seq >= 1`                                                                         | Упаковка с номером меньше первого                                                    |
 
 ### 4.3 Частичные уникальные индексы
 
-20 индексов имеют условие `WHERE`. Ключевые:
+34 индекса имеют условие `WHERE`, из них 18 уникальных. Ключевые:
 
-| Индекс                          | Условие                   | Смысл                                                                |
-| ------------------------------- | ------------------------- | -------------------------------------------------------------------- |
-| `uq_products_sku`               | `deleted_at IS NULL`      | Артикул уникален среди живых товаров                                 |
-| `uq_products_slug`              | `deleted_at IS NULL`      | То же для URL                                                        |
-| `uq_products_external_id`       | `external_id IS NOT NULL` | Один объект 1С — одна карточка; при этом `NULL` у всех до интеграции |
-| `uq_users_email`                | `deleted_at IS NULL`      | Уволенный не блокирует повторное заведение                           |
-| `uq_product_categories_primary` | `is_primary`              | Одна основная категория на товар                                     |
-| `uq_product_images_main`        | `is_main`                 | Одна обложка                                                         |
-| `uq_price_lists_default`        | `is_default`              | Один прайс по умолчанию                                              |
-| `uq_requests_idempotency_key`   | `IS NOT NULL`             | Защита от дублей, но не мешает заявкам без ключа                     |
+| Индекс                                   | Условие                           | Смысл                                                                |
+| ---------------------------------------- | --------------------------------- | -------------------------------------------------------------------- |
+| `uq_products_sku`                        | `deleted_at IS NULL`              | Артикул уникален среди живых товаров                                 |
+| `uq_products_slug`                       | `deleted_at IS NULL`              | То же для URL                                                        |
+| `uq_products_external_id`                | `external_id IS NOT NULL`         | Один объект 1С — одна карточка; при этом `NULL` у всех до интеграции |
+| `uq_users_email`                         | `deleted_at IS NULL`              | Уволенный не блокирует повторное заведение                           |
+| `uq_product_categories_primary`          | `is_primary`                      | Одна основная категория на товар                                     |
+| `uq_product_images_main`                 | `is_main`                         | Одна обложка                                                         |
+| `uq_price_lists_default`                 | `is_default`                      | Один прайс по умолчанию                                              |
+| `uq_requests_idempotency_key`            | `IS NOT NULL`                     | Защита от дублей, но не мешает заявкам без ключа                     |
+| `uq_warehouse_documents_active_request`  | `status IN ('CREATED', 'PACKED')` | Не больше одного действующего складского документа на заявку         |
+| `uq_warehouse_documents_idempotency_key` | `IS NOT NULL`                     | Повтор запроса на разбиение не создаёт второй документ               |
+| `uq_warehouse_documents_external_id`     | `IS NOT NULL`                     | Один документ 1С — один складской документ                           |
 
 ---
 
@@ -452,17 +533,19 @@ PostgreSQL поддерживает их сам — рассинхронизац
 
 Реализована только схема. Кода интеграции нет.
 
-| Что заложено                      | Где                                                                                         |
-| --------------------------------- | ------------------------------------------------------------------------------------------- |
-| `external_id` (GUID объекта 1С)   | `products`, `categories`, `warehouses`, `regions`, `price_lists`, `price_tiers`, `requests` |
-| Уникальность при наличии значения | Частичные индексы `WHERE external_id IS NOT NULL`                                           |
-| `sku` как бизнес-ключ             | `products.sku` — сопоставление до простановки GUID                                          |
-| Кто последний записал             | `sync_source`: `manual` / `excel` / `1c`                                                    |
-| Время синхронизации               | `synced_at` — для инкрементального обмена                                                   |
-| Дробные количества                | `NUMERIC` в `stocks`, `price_tiers`, `request_items`                                        |
-| Единица измерения без CHECK       | `products.unit` — 1С может прислать незнакомый код                                          |
-| Выгрузка заявок                   | `requests.external_id`, `requests.exported_at` + индекс `ix_requests_pending_export`        |
-| Склады 1С                         | `warehouses.external_id`                                                                    |
+| Что заложено                      | Где                                                                                                                                                                                                               |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `external_id` (GUID объекта 1С)   | `products`, `categories`, `warehouses`, `regions`, `price_lists`, `price_tiers`, `requests`                                                                                                                       |
+| Уникальность при наличии значения | Частичные индексы `WHERE external_id IS NOT NULL`                                                                                                                                                                 |
+| `sku` как бизнес-ключ             | `products.sku` — сопоставление до простановки GUID                                                                                                                                                                |
+| Кто последний записал             | `sync_source`: `manual` / `excel` / `1c`                                                                                                                                                                          |
+| Время синхронизации               | `synced_at` — для инкрементального обмена                                                                                                                                                                         |
+| Дробные количества                | `NUMERIC` в `stocks`, `price_tiers`, `request_items`                                                                                                                                                              |
+| Единица измерения без CHECK       | `products.unit` — 1С может прислать незнакомый код                                                                                                                                                                |
+| Выгрузка заявок                   | `requests.external_id`, `requests.exported_at` + индекс `ix_requests_pending_export`                                                                                                                              |
+| Склады 1С                         | `warehouses.external_id`                                                                                                                                                                                          |
+| Упоминание в выгрузке остатков    | `stocks.reported_at` — когда 1С в последний раз прислала строку, даже без изменения чисел                                                                                                                         |
+| Выгрузка складских документов     | `warehouse_documents.uuid`, `external_id`, `exported_at`, `write_off_confirmed_at`, `cancel_exported_at` + индексы `ix_warehouse_documents_onec_write_off_pending` и `ix_warehouse_documents_onec_cancel_pending` |
 
 Матрица владения полями (кто мастер для чего) — раздел 7.2 в
 `docs/architecture.md`. Её нужно зафиксировать письменно до начала
@@ -476,7 +559,7 @@ PostgreSQL поддерживает их сам — рассинхронизац
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `stock_movements` (регистр движений)   | Источником истины по остаткам будет 1С. Параллельный регистр = второй источник правды и гарантированные расхождения |
 | История цен отдельной таблицей         | `audit_log` покрывает потребность. Полноценная история версий добавляется позже без изменения схемы                 |
-| Таблицы `roles` / `permissions`        | Пять ролей в одной компании. Права — константы в коде, см. `app/modules/users/permissions.py`                       |
+| Таблицы `roles` / `permissions`        | Шесть ролей в одной компании. Права — константы в коде, см. `app/modules/users/permissions.py`                      |
 | Партиционирование `audit_log`          | При 100–200 заявках в день таблица не вырастет до размеров, требующих партиций, годами                              |
 | `customers` (кабинет B2B)              | Кабинет не нужен на старте. Отдельная таблица, а не расширение `users`                                              |
 | `notification_outbox`                  | Относится к этапу 8                                                                                                 |

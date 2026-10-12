@@ -19,3 +19,5 @@ class UserRole(StrEnum):
     MANAGER = "MANAGER"
     CONTENT_MANAGER = "CONTENT_MANAGER"
     VIEWER = "VIEWER"
+    # Кладовщик: упаковка заявок на складе, без цен и контактов клиентов.
+    WAREHOUSE = "WAREHOUSE"

@@ -19,6 +19,15 @@ from tests.helpers import count_queries
 STOCK = "/api/v1/admin/stock"
 PRODUCTS = "/api/v1/admin/products"
 
+# Роли с правом catalog.read. У кладовщика (WAREHOUSE) его нет.
+CATALOG_READERS = [
+    UserRole.SUPERADMIN,
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+    UserRole.CONTENT_MANAGER,
+    UserRole.VIEWER,
+]
+
 
 def skus(body: dict) -> list[str]:
     return [item["sku"] for item in body["items"]]
@@ -250,7 +259,7 @@ async def test_query_count_is_fixed(
 
 
 # ================================================================== права
-@pytest.mark.parametrize("role", list(UserRole))
+@pytest.mark.parametrize("role", CATALOG_READERS)
 async def test_every_catalog_reader_can_read_stock(
     api: AsyncClient, login_as, role: UserRole
 ) -> None:

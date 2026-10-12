@@ -55,6 +55,10 @@ ROLE_PERMISSIONS: dict[UserRole, frozenset[str]] = {
     UserRole.MANAGER: _MANAGER,
     UserRole.CONTENT_MANAGER: _CONTENT_MANAGER,
     UserRole.VIEWER: frozenset({CATALOG_READ, REQUEST_READ}),
+    # Роль уже есть, прав пока нет: права упаковки выдаются отдельной
+    # задачей. Пустой набор записан явно, чтобы матрица перечисляла
+    # все роли.
+    UserRole.WAREHOUSE: frozenset(),
 }
 
 

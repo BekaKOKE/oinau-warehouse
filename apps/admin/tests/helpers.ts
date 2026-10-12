@@ -116,6 +116,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
   MANAGER,
   CONTENT_MANAGER,
   VIEWER: ['catalog.read', 'request.read'],
+  // Роль уже есть, прав пока нет — как в матрице backend.
+  WAREHOUSE: [],
 };
 
 export function makeUser(role: UserRole, overrides: Partial<CurrentUser> = {}): CurrentUser {

@@ -96,6 +96,10 @@ class Stock(Base, ExternalSyncMixin):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=text("now()"), nullable=False
     )
+    # Когда 1С в последний раз упомянула строку в выгрузке остатков —
+    # даже если числа не изменились. synced_at при этом значения не
+    # меняет: он по-прежнему отвечает на вопрос «когда данные изменились».
+    reported_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
 
     product: Mapped[Product] = relationship(back_populates="stocks")
 
