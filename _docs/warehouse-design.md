@@ -180,7 +180,7 @@ One revision: `apps/backend/alembic/versions/2026_10_xx_xxxx-<rev>_warehouse_pac
 
 **Process**
 - Generated with `make makemigration m="warehouse packing"`, then reviewed by hand (partial indexes and checks need care).
-- Checked by `test_models.py` (metadata matches migrations).
+- Checked in CI by `alembic upgrade head` followed by `alembic check` (metadata matches migrations). The new models must be imported in the list at the bottom of `app/db/base.py`, or `alembic check` does not see them.
 - Not run on container start (project rule 8). In production: `make prod-backup` → `make prod-migrate`.
 
 ---
@@ -552,7 +552,7 @@ WAREHOUSE has no `request.read` and no `catalog.read`. Everything it needs comes
 | Request detail — warehouse block | `/requests/[id]` | `request.read` | ✗ | ✓ |
 | Dashboard `/` | — | (existing) | sees only cards it has permissions for | |
 
-`apps/admin/src/lib/auth/permissions.ts` gets the three permission codes, their `PERMISSION_LABELS`, and `ROLE_LABELS.WAREHOUSE = 'Кладовщик'`. The role list in the user management screen comes from generated types (`make gen-types`).
+`apps/admin/src/lib/auth/permissions.ts` gets the three permission codes, their `PERMISSION_LABELS`, and `ROLE_LABELS.WAREHOUSE = 'Кладовщик'`. `apps/admin/src/lib/users.ts` gets `ROLE_HINTS.WAREHOUSE`. Both role maps are typed `Record<UserRole, string>`, and `UserRole` comes from the generated types (`make gen-types`), so the label and the hint must be added in the same change that adds the role, or the admin app does not typecheck. The role options in the user management screen are built from `ROLE_LABELS`.
 
 ---
 
@@ -658,7 +658,7 @@ Backend tests live in `apps/backend/tests/` (pytest, real PostgreSQL as today). 
 | Rule | Test file | Cases |
 |---|---|---|
 | Schema constraints (§1) | `test_models.py` (extend) + `test_warehouse_models.py` | status check; `package_count > 0`; quantity > 0 on lines and packages; `(document_id, seq)` unique; the timestamp checks (export only after pack, write-off only after export, cancel-ack only if cancelled + exported); **partial unique index: a second CREATED/PACKED document for the same request fails, but one after CANCELLED works** |
-| Migration | `test_models.py` / CI `alembic upgrade head` + `downgrade -1` + `upgrade head` | Downgrade refuses while WAREHOUSE users exist |
+| Migration | CI `alembic upgrade head` + `alembic check`; `test_warehouse_models.py` for the downgrade guard; a manual `downgrade -1` + `upgrade head` round trip before the commit | Models and migration match. Downgrade refuses while any `users` row has the role WAREHOUSE (active, inactive or soft-deleted). CI does not run `downgrade`, so the guard is a function in the migration file and is tested by calling it, not by downgrading the shared test database |
 | Availability formula (§4) | `test_warehouse_availability.py` | `quantity − reserved`; CREATED and PACKED subtract; CANCELLED doesn't; confirmed + `reported_at` older → still subtracted; confirmed + `reported_at` newer → not subtracted; no stocks row → 0 and stale; several documents for the same product add up; decimal quantities (12.5 m) |
 | `reported_at` (T7) | `test_integration_sync.py` (extend) | A push with an **unchanged** quantity updates `reported_at`, keeps `synced_at`, writes no audit record; a changed quantity updates all three |
 | Create split — happy path | `test_admin_warehouse_packing.py` | 500 = 5×100 → 1 document + 5 packages, number `WH-YYYY-NNNNNN`, labels `…-1/5…-5/5`; mixed amounts 100+100+100+100+50+50; decimals |
