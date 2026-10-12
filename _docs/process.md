@@ -8,6 +8,24 @@ How we build the warehouse feature. Work is driven by GitHub issues (repo `uprox
 - The backlog: GitHub issues with label `mvp` (first release) or `post-mvp` (later). `_docs/tasks.md` is the original list the issues were created from.
 - Issue format: `_docs/task-template.md`.
 
+## Issue numbers
+
+GitHub numbers differ from the numbers in the issue titles, because GitHub #1 is a pull request. Always use the GitHub number in commands and commit messages:
+
+| Title | GitHub |
+|---|---|
+| 1 | #2 |
+| 2 | #3 |
+| 3 | #4 |
+| 4 | #5 |
+| 5 | #6 |
+| 6a | #7 |
+| 6b | #8 |
+| 7 | #9 |
+| 8 | #10 |
+| 9 | #11 |
+| 10 | #12 |
+
 ## Life of an issue
 
 1. **Groom (PM).** Pick the next open `mvp` issue whose dependencies are closed. Read the design sections it refers to. Rewrite the issue body with: Goal, Acceptance criteria (checkable), Out of scope, Constraints, Design references. Split the issue if it is too big for one commit.

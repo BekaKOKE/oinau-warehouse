@@ -31,7 +31,7 @@ Backend (run from `apps/backend`):
 
 Frontend (run from the repository root):
 
-- `pnpm --filter admin test`, `pnpm --filter admin lint`, `pnpm --filter admin typecheck` (same for `web`)
+- `pnpm --filter @oinau/admin test`, `pnpm --filter @oinau/admin lint`, `pnpm --filter @oinau/admin typecheck` (same for `@oinau/web`)
 
 Infrastructure: `make up-infra` starts PostgreSQL and Redis. Local ports are set in `.env` (Postgres 5433, Redis 6380); `.env` is never committed.
 

@@ -14,7 +14,7 @@ You verify one implemented issue independently. You did not write the code and y
 2. For each criterion, find the code and the test that covers it. A criterion without a real test or without code is a failure.
 3. Run the checks for the touched module only:
    - backend: `cd apps/backend && uv run pytest tests/<module>`, `uv run ruff check .`, `uv run mypy app`;
-   - frontend: `pnpm --filter <app> test`, `lint`, `typecheck`.
+   - frontend: `pnpm --filter @oinau/<admin|web> test`, `lint`, `typecheck`.
    Do not run the full suite.
 4. Check the safety rules from `AGENTS.md`: additive migration, no prices/contacts for the `WAREHOUSE` role, no secrets, no stock writes by the site, nothing else changed outside the scope.
 5. Post exactly one comment on the issue:
