@@ -1,0 +1,67 @@
+/*
+ * Плавающая кнопка WhatsApp.
+ *
+ * Слой ниже шапки и окон: мобильное меню, корзина и быстрый заказ
+ * закрывают кнопку вместе с затемнением, а не наоборот.
+ *
+ * Квадрат, как и остальные кнопки сайта. На телефоне стоит над нижней
+ * панелью и учитывает безопасную зону экрана (полоса «домой» на iPhone).
+ */
+.button {
+  position: fixed;
+  right: calc(22px + env(safe-area-inset-right, 0px));
+  bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+  z-index: 40;
+  width: 56px;
+  height: 56px;
+  background: #1faa59;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 22px rgba(16, 22, 43, 0.22);
+  transition:
+    transform 0.18s ease,
+    background-color 0.18s ease,
+    opacity 0.18s ease,
+    visibility 0s linear 0s;
+}
+
+.button:hover,
+.button:focus-visible {
+  color: #fff;
+  background: #168c48;
+  transform: translateY(-2px);
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+
+/* Под кнопкой оказался нажимаемый элемент или открыта клавиатура:
+   кнопка уходит и не перехватывает нажатия, пока место не освободится. */
+.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(10px) scale(0.9);
+  transition:
+    transform 0.18s ease,
+    opacity 0.18s ease,
+    visibility 0s linear 0.18s;
+}
+
+@media (max-width: 860px) {
+  .button {
+    right: calc(12px + env(safe-area-inset-right, 0px));
+    bottom: calc(var(--tabbar-height) + 12px + env(safe-area-inset-bottom, 0px));
+    width: 48px;
+    height: 48px;
+  }
+
+  .button svg {
+    width: 24px;
+    height: 24px;
+  }
+}

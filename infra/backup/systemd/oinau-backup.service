@@ -1,0 +1,25 @@
+; Резервное копирование базы OINAU PRO.
+; Установка (от root):
+;   cp infra/backup/systemd/oinau-backup.* /etc/systemd/system/
+;   systemctl daemon-reload
+;   systemctl enable --now oinau-backup.timer
+;
+; Подставьте свой путь к репозиторию и пользователя деплоя в строках
+; WorkingDirectory и User.
+
+[Unit]
+Description=OINAU PRO: резервная копия PostgreSQL
+; Дамп снимается через docker compose exec — без докера смысла запускаться нет.
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=deploy
+WorkingDirectory=/srv/oinau-pro
+ExecStart=/srv/oinau-pro/infra/backup/pg-backup.sh
+; Дамп большой базы не должен висеть бесконечно, если контейнер завис.
+TimeoutStartSec=3600
+; Вывод скрипта попадает в journald: journalctl -u oinau-backup
+StandardOutput=journal
+StandardError=journal

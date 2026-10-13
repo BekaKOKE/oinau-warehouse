@@ -1,0 +1,162 @@
+================================================================================
+ЭТАП 10 — PRODUCTION DEPLOYMENT + ФИНАЛЬНЫЙ QA
+Завершён: 2026-09-20                                     ПОСЛЕДНИЙ ЭТАП ПРОЕКТА
+================================================================================
+
+СТАТУС РАЗВЁРТЫВАНИЯ: PRODUCTION DEPLOYMENT BLOCKED BY ACCESS
+
+Нет доступа к VPS Hoster.kz, домену oinau-pro.kz и аккаунту Cloudflare.
+Ничего из DNS/TLS/VPS не настраивалось и не проверялось — утверждать
+обратное было бы вымыслом. Всё, что относится к репозиторию, готово;
+ручные шаги расписаны в docs/deployment.md.
+
+
+================================================================================
+1. АУДИТ ГОТОВНОСТИ (что нашли ДО правок)
+================================================================================
+
+BLOCKING (без этого production не собирался вообще)
+
+  B1  packages/api-types/src/schema.d.ts генерировался и НЕ хранился в Git.
+      Следствия: job "frontend" в CI падал на чистом клоне; production-образы
+      web и admin собрать было невозможно; деплой из git clone — тоже.
+
+  B2  infra/docker/node.Dockerfile, production-stage: CMD ["node","server.js"]
+      при WORKDIR /repo. В pnpm-монорепо Next кладёт standalone как
+      .next/standalone/apps/<app>/server.js — контейнер не стартовал бы.
+      Проверено: структура каталогов подтверждена локальной сборкой.
+
+  B3  Тот же Dockerfile: builder копировал манифест ТОЛЬКО собираемого
+      приложения, а pnpm-lock.yaml описывает весь workspace —
+      `pnpm install --frozen-lockfile` отклонял установку.
+
+  B4  Тот же Dockerfile: COPY apps/admin/public — каталог пуст и в Git
+      отсутствовал, сборка админки падала на этом шаге.
+
+  B5  Не было production-compose, обратного прокси и шаблона прод-окружения.
+
+NEEDS CONFIGURATION
+
+  N1  CI не запускал vitest (677 тестов фронтенда не проверялись ни разу)
+      и не собирал образы web/admin.
+  N2  Валидация production-настроек не ловила dev-значения в адресах,
+      которые уезжают наружу (ссылки в письмах, URL картинок) и mailpit
+      как почтовый сервер.
+  N3  Cache-Control: no-store стоял только на /api/v1/admin — кабинет
+      клиента и вход в него отдавались без запрета кеширования.
+  N4  У воркера не было проверки здоровья; health_check_interval = 1 час.
+  N5  Не было резервного копирования: ни скрипта, ни расписания,
+      ни процедуры восстановления.
+  N6  Не было .gitattributes: shell-скрипты и Caddyfile могли уехать
+      на сервер с CRLF.
+  N7  Нет favicon вообще (ни .ico, ни icon.svg).
+  N8  Число процессов uvicorn зашито в образ (4).
+
+MISSING (реализовано на этапе)
+  docs/deployment.md, docs/operations.md, compose.prod.yaml, Caddyfile,
+  .env.production.example, infra/backup/*, цели make prod-*.
+
+READY (правок не потребовалось)
+  Архитектура поверхностей API и RBAC; хеширование паролей argon2id;
+  ротация refresh-токенов; ограничение частоты на Lua (атомарное,
+  fail-open при недоступном Redis); outbox уведомлений с повторами;
+  приглушение httpx (токен Telegram стоит в пути URL); валидация
+  загрузок по сигнатуре файла; защита от ZIP- и декомпрессионных бомб;
+  отключение Swagger в production; вычисление IP клиента справа по
+  X-Forwarded-For; хеширование IP в аудите; заголовки безопасности;
+  структурные логи с request_id; /health и /health/ready.
+
+
+================================================================================
+2. ЧТО СДЕЛАНО
+================================================================================
+
+Docker / развёртывание
+  + infra/docker/compose.prod.yaml — наружу только прокси (80/443/443udp);
+    postgres и redis в сети internal: true (нет маршрута в интернет);
+    у backend, воркера, web и admin НЕТ проброшенных портов; лимиты
+    журналов; restart: unless-stopped; миграции — профиль tasks.
+  + infra/docker/caddy/Caddyfile — один домен: /api/* -> backend,
+    /admin* -> admin, остальное -> web; /health наружу, /health/ready 404;
+    автоматический TLS и редирект 80->443; потолок тела запроса.
+  ~ infra/docker/node.Dockerfile — исправлены B2, B3, B4; healthcheck;
+    число процессов и путь запуска из окружения.
+  ~ apps/backend/Dockerfile — UVICORN_WORKERS из окружения, exec-форма,
+    отключён дублирующий access-log uvicorn.
+
+Окружение и секреты
+  + .env.production.example — только то, что приложение действительно
+    читает; обязательные поля помечены словом ЗАПОЛНИТЬ.
+  ~ app/core/config.py — в production отклоняются: http и локальные
+    адреса в PUBLIC_SITE_URL, PUBLIC_ADMIN_URL, CDN_BASE_URL,
+    S3_ENDPOINT_URL; mailpit/localhost в SMTP_HOST.
+
+Резервные копии
+  + infra/backup/pg-backup.sh — pg_dump -Fc, проверка читаемости дампа,
+    ротация по дням, необязательная выгрузка вне сервера через rclone.
+  + infra/backup/pg-restore-verify.sh — разворачивает копию во ВРЕМЕННУЮ
+    базу, сверяет таблицы и alembic_version, удаляет её.
+  + infra/backup/systemd/* — ежедневный таймер (устанавливается вручную).
+
+CI
+  ~ .github/workflows/ci.yml — добавлены: job "Типы API актуальны"
+    (сверка schema.d.ts с кодом backend), запуск vitest, сборка образов
+    web и admin, проверка compose.prod.yaml по шаблону окружения.
+
+Наблюдаемость и безопасность
+  ~ middleware: no-store теперь и на /api/v1/customer, и на
+    /api/v1/public/auth.
+  ~ воркер: health_check_interval = 30 c, healthcheck `arq --check`.
+  + docs/operations.md — что смотреть при каждом виде отказа.
+
+Прочее
+  + favicon.ico и icon.svg для витрины и админки.
+  + .gitattributes — LF для всего, что исполняется в контейнере.
+  - удалён неиспользуемый apps/web/src/lib/api.ts.
+  ~ исправлен плавающий тест admin (ждал select, а не загрузку списка).
+
+
+================================================================================
+3. РЕЗУЛЬТАТЫ ПРОВЕРОК
+================================================================================
+
+  pytest                 1236 passed        (было 1220 + 16 новых)
+  ruff check             чисто
+  ruff format --check    чисто
+  mypy                   210 файлов, чисто
+  alembic upgrade+check  чисто, новых миграций не требуется
+  vitest admin            479 passed
+  vitest web              198 passed
+  tsc --noEmit           4 пакета, чисто
+  eslint                 чисто
+  prettier --check       чисто
+  pnpm -r build          web и admin собираются
+  caddy validate         Valid configuration (+ прогон маршрутов вживую)
+  compose.prod.yaml      YAML и слияние якорей проверены; `docker compose
+                         config` — только в CI, Docker на машине нет
+  секреты                в отслеживаемых файлах не найдены; .env не
+                         коммитился никогда (проверено по всей истории)
+
+Производительность (локально, 1 процесс uvicorn, БД рядом), медиана:
+  категории 30 мс, список товаров 30 мс, карточка 25 мс, поиск 31 мс,
+  CMS 15 мс; страницы Next.js: главная 15 мс, каталог 29 мс, карточка 25 мс.
+  N+1 нет: число SQL-запросов не зависит от размера страницы (24 и 60
+  позиций — по 4 запроса).
+
+
+================================================================================
+4. ЧТО ОСТАЛОСЬ СДЕЛАТЬ РУКАМИ (нужны доступы)
+================================================================================
+
+  1. VPS Hoster.kz: пользователь деплоя, SSH по ключу, ufw, Docker.
+  2. Cloudflare: домен, A-записи @ и www, SSL/TLS = Full (strict),
+     правило Cache Rules "bypass" для /api/ и /admin.
+  3. Cloudflare R2: бакет, ключ только на этот бакет, домен
+     cdn.oinau-pro.kz, CORS-политика на PUT с origin сайта.
+  4. .env.production на сервере: SECRET_KEY, POSTGRES_PASSWORD, ключи R2,
+     реквизиты SMTP, TRUSTED_PROXY_HOPS=2.
+  5. make prod-build / prod-up / prod-migrate / prod-superuser.
+  6. Установить таймер резервного копирования и проверить восстановление.
+  7. Аптайм-монитор на https://oinau-pro.kz/health.
+
+  Полностью — docs/deployment.md.

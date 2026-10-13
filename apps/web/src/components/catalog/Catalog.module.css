@@ -1,0 +1,419 @@
+/* ------------------------------------------------------------- шапка */
+
+/* Обёртка экрана. Не `.page`: так называется кнопка пагинации ниже. */
+.view {
+  padding-top: 18px;
+}
+
+.head {
+  margin-top: 6px;
+}
+
+.title {
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+}
+
+.subtitle {
+  margin-top: 10px;
+  max-width: 70ch;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink-55);
+}
+
+.subtitle strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* -------------------------------------------------------------- макет */
+
+.layout {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+  margin-top: 26px;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.results {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.help {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px;
+  background: var(--surface-tint);
+}
+
+.helpTitle {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.helpText {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-55);
+  margin-bottom: 6px;
+}
+
+/* ------------------------------------------------ разделы в «Подборе» */
+
+.tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Блочная ссылка: счётчик идёт в строку за названием и переносится вместе
+   с ним, а не уезжает в отдельную колонку у длинного раздела. */
+.tab {
+  display: block;
+  min-height: 38px;
+  padding: 9px 10px;
+  font-size: 14px;
+  line-height: 1.3;
+  color: var(--ink);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.tab:hover {
+  background: var(--surface-tint);
+  color: var(--ink);
+}
+
+.tabActive,
+.tabActive:hover {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.tabCount {
+  margin-left: 6px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.tabActive .tabCount {
+  color: var(--on-primary-45);
+}
+
+/* ------------------------------------------------------ панель выдачи */
+
+.toolbarWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.sortLabel {
+  font-size: 13px;
+  color: var(--ink-55);
+}
+
+.sortButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.sortButton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  background: var(--surface-tint);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.sortButton:hover {
+  background: #e4ebfa;
+  color: var(--ink);
+}
+
+.sortActive,
+.sortActive:hover {
+  background: var(--navy);
+  color: #fff;
+  font-weight: 600;
+}
+
+.sortSelectWrap {
+  display: none;
+}
+
+.sortSelect {
+  min-height: 42px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.foundCount {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--ink-55);
+}
+
+.quote {
+  flex: none;
+}
+
+.chips {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ----------------------------------------------------------- пагинация */
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.pages {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+
+.page {
+  min-width: 44px;
+  height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-size: 14px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.page:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.pageActive,
+.pageActive:hover {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: #fff;
+  font-weight: 600;
+}
+
+.pageDisabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.pageGap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 44px;
+  color: var(--ink-55);
+}
+
+.pageInfo {
+  font-size: 13px;
+  color: var(--ink-55);
+}
+
+/* ------------------------------------------------------------ адаптив */
+
+/* Переключатель «Таблица / Плитка». */
+.viewToggle {
+  display: flex;
+  border: 1px solid var(--line);
+}
+
+.viewButton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-70);
+}
+
+.viewButton:hover {
+  background: var(--surface-tint);
+}
+
+.viewActive,
+.viewActive:hover {
+  background: var(--navy);
+  color: #fff;
+}
+
+/* Подразделы над таблицей — компактные строки, а не крупные карточки. */
+.subcategories {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.subcategory {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 48px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.subcategory:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.subcategoryCount {
+  flex: none;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-55);
+}
+
+.loadMore {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.loadMoreError {
+  font-size: 13px;
+  color: var(--danger);
+}
+
+@media (max-width: 1180px) {
+  .sortLabel {
+    display: none;
+  }
+}
+
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    margin-top: 18px;
+  }
+
+  .help {
+    display: none;
+  }
+
+  /* Разделы — горизонтальная лента в панели «Подбор». */
+  .tabs {
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 6px;
+    padding-right: 12px;
+    scrollbar-width: none;
+  }
+
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    border: 1px solid var(--line);
+  }
+
+  .tabActive {
+    border-color: var(--primary);
+  }
+}
+
+@media (max-width: 720px) {
+  .title {
+    font-size: 24px;
+  }
+
+  .subtitle {
+    font-size: 14px;
+  }
+
+  .toolbar {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .sortButtons {
+    display: none;
+  }
+
+  .sortSelectWrap {
+    display: block;
+    flex: 1 1 100%;
+  }
+
+  .foundCount {
+    margin-left: 0;
+  }
+
+  .quote {
+    margin-left: auto;
+  }
+}

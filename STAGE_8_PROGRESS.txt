@@ -1,0 +1,1065 @@
+STAGE 8 — ADMIN FRONTEND
+========================
+
+1. АНАЛИЗ (до начала реализации)
+--------------------------------
+
+1.1. Текущее состояние apps/admin
+  Каркас этапа 2: одна страница с проверкой /health/ready, тёмная тема,
+  lib/api.ts с токеном в переменной модуля. Ни аутентификации, ни разделов,
+  ни тестов. packages/api-client — общий fetch-клиент (ApiError, таймаут,
+  credentials: include). packages/api-types — сгенерированный schema.d.ts
+  (все admin-эндпоинты уже в нём) + псевдонимы только для витрины/кабинета.
+
+1.2. Admin API (/api/v1/admin) и права (backend = источник истины)
+
+  Роли → права (app/modules/users/permissions.py):
+    SUPERADMIN      всё + api_key.manage
+    ADMIN           catalog.read/write, price.write, stock.write, media.upload,
+                    content.write, request.read/write/export, user.manage,
+                    settings.write, audit.read
+    MANAGER         catalog.read, request.read, request.write, request.export
+    CONTENT_MANAGER catalog.read/write, price.write, stock.write, media.upload,
+                    content.write
+    VIEWER          catalog.read, request.read
+
+  Эндпоинт                                          право
+  auth/login|refresh|logout|me|change-password      — (refresh в httpOnly cookie,
+                                                       path=/api/v1/admin/auth)
+  GET users                                         user.manage (только список)
+  categories: GET list|tree|{id}|{id}/attributes    catalog.read
+              POST, PATCH, DELETE, restore, PUT attrs catalog.write
+  attributes: GET list|{id}                         catalog.read
+              POST, PATCH, DELETE, options CRUD     catalog.write
+  products:   GET list|{id}                         catalog.read
+              POST, PATCH, DELETE, restore,
+              PUT categories|attributes             catalog.write
+  products/{id}/pricing GET | PUT                   catalog.read | catalog.write
+  pricing/price-list GET                            catalog.read
+  products/{id}/stock|availability GET              catalog.read
+  products/{id}/stock PUT, availability PATCH       stock.write
+  warehouses GET | POST, PATCH                      catalog.read | stock.write
+  media GET list|{uuid}                             catalog.read
+  media upload-intent, {uuid}/complete              catalog.write + media.upload
+  media DELETE                                      catalog.write
+  products/{id}/images GET | POST, PUT order|main,
+              PATCH, DELETE                         catalog.read | catalog.write
+  requests GET list|{id}|comments|history           request.read
+  requests PATCH status, POST comments              request.write
+  content GET/PUT home|contacts|delivery|faq|
+              requisites|settings                   content.write (и чтение)
+  catalog/export, imports/template, imports/preview,
+              GET imports, imports/{uuid}           catalog.read
+  catalog/imports/{uuid}/commit                     catalog.write
+
+  Замечание: право price.write в матрице есть, но цены защищены
+  catalog.write. Backend не меняем — фронтенд проверяет то же, что backend.
+
+1.3. Обнаруженные gaps backend
+  G1  Нет API чтения журнала аудита (таблица audit_log и право audit.read
+      есть). Без него невозможны раздел «Аудит» и «последние изменения»
+      на дашборде. → нужен GET /admin/audit (audit.read), минимально.
+  G2  Нет сводки каталога: «товары без изображения», «без цены», сводка
+      наличия не выводятся ни одним эндпоинтом (список товаров не содержит
+      ни изображений, ни цен). → нужен read-only эндпоинт сводки (catalog.read).
+  G3  Нет списка остатков по всем товарам: остатки читаются только по одному
+      товару. Страница «Склад» без него требует N+1 запросов. → нужен
+      read-only постраничный список остатков (catalog.read).
+  G4  Пользователи: только список. Создания, изменения роли, отключения
+      в backend НЕТ → раздел «Пользователи» только для чтения; управление —
+      отдельное решение (не придумываем frontend-only RBAC).
+      Матрица «роль → права» наружу не отдаётся (только свои права в /me).
+  G5  Карточка заявки не показывает, пришла ли заявка из кабинета клиента
+      (customer_id не в схеме). Не блокирует — фиксируем.
+  Количество заявок по статусам берётся из GET /requests?status=…&page_size=1
+  (поле total) — отдельный эндпоинт не нужен.
+
+2. ПЛАН ПОДЭТАПОВ
+-----------------
+  8A  Фундамент: basePath /admin, auth (login/logout, refresh с дедупликацией
+      и Web Lock, 401/403), провайдер сессии и прав, layout (sidebar/topbar),
+      UI-kit (кнопки, поля, таблица, бейджи, пагинация, skeleton, empty/error,
+      toast, confirm, drawer), форматирование Decimal/дат, типы из OpenAPI,
+      vitest; дашборд на существующих эндпоинтах.
+  8B  Backend gaps G1–G3 (минимально, с тестами), перегенерация типов.
+  8C  Заявки: список (фильтры, поиск, даты, пагинация), карточка (позиции,
+      снапшоты цен, контакты, статус, комментарии, история).
+  8D  Товары: список, создание/редактирование, категории, характеристики,
+      цены (tiers), изображения (upload intent → PUT → complete, порядок,
+      главное), остатки и наличие в карточке.
+  8E  Категории (дерево) и характеристики (options, привязка к категориям).
+  8F  Склад: склады, остатки, override наличия.
+  8G  CMS: 6 структурированных разделов, выбор медиа.
+  8H  Импорт/экспорт XLSX.
+  8I  Пользователи (read-only), аудит, завершение дашборда, QA, документация.
+
+3. ПОДЭТАП 8A — ФУНДАМЕНТ (выполнен 2026-09-14)
+------------------------------------------------
+Backend не менялся. Витрина и кабинет не менялись.
+
+3.1. Сделано
+  * basePath /admin (next.config.ts): /admin/login, /admin, /admin/products…;
+    редирект / → /admin; заголовки X-Frame-Options DENY, noindex, nosniff.
+  * Аутентификация (lib/auth/session.ts): access-токен только в памяти;
+    refresh — httpOnly cookie backend на /api/v1/admin/auth; дедупликация
+    refresh внутри вкладки + Web Lock «oinau-admin-refresh» между вкладками;
+    на 401 — одна попытка refresh и повтор; 403 сессию не трогает;
+    сетевой сбой не выкидывает; выход в другой вкладке (событие storage)
+    гасит сессию сразу. Ключ признака сессии oinau.admin.session —
+    не пересекается с кабинетом клиента.
+  * SessionProvider: профиль и права из GET /auth/me; can(...permissions).
+    AuthGate: без сессии → /login?next=… (next проверяется: только
+    внутренний путь). RequirePermission: экран «Нет доступа».
+  * Навигация по правам (lib/navigation.ts). MANAGER/VIEWER: Dashboard,
+    Заявки, Товары и Склад (чтение). Категории/Атрибуты/Импорт — только
+    с catalog.write; Контент — content.write; Пользователи — user.manage;
+    Аудит — audit.read.
+  * UI-kit (components/ui): Button/ButtonLink, Field/Input/Select/Textarea/
+    Checkbox/Switch (ошибки 422 привязаны к полям через aria), Badge/
+    EnumBadge, DataTable (skeleton/empty/error/refreshing), Pagination,
+    Dialog (modal/drawer, focus trap), ConfirmProvider/useConfirm (фокус на
+    «Отмена»), ToastProvider/useToast, PageHeader/Card/Toolbar, StatCard,
+    Skeleton/EmptyState/ErrorState/ForbiddenState, Icon (встроенный SVG).
+  * lib/decimal.ts — Decimal только строками: formatMoney/formatQuantity,
+    normalizeDecimalInput (запятая, пробелы, пределы NUMERIC(14,2)/(14,3)),
+    compareDecimal без float. lib/format.ts — даты в Asia/Almaty.
+  * lib/labels.ts — подписи enum backend через Record<EnumType,…>: новый
+    статус в backend ломает компиляцию, а не теряется молча.
+  * lib/api/types.ts — псевдонимы сгенерированной схемы (без ручных
+    интерфейсов), QueryOf<operation> для query-параметров.
+  * useQuery — отмена устаревших запросов, без гонок, reload/setData.
+  * Dashboard: новые заявки, в работе, активные товары, категории
+    (total списков с page_size=1), последние заявки, недавно изменённые
+    товары, быстрые переходы. Блоки без прав не запрашиваются.
+  * Разделы 8C–8I — страницы-заглушки с проверкой прав (навигация и ссылки
+    дашборда не ведут в 404).
+
+3.2. API, использованные в 8A
+  POST /admin/auth/login, /refresh, /logout; GET /admin/auth/me;
+  GET /admin/requests (status, sort, page_size); GET /admin/products
+  (is_active, sort, page_size); GET /admin/categories (page_size).
+
+3.3. Проверки
+  vitest: 4 файла, 42 теста (decimal, lib, session, shell) — зелёные.
+  tsc --noEmit, next lint, prettier --check (весь репозиторий) — чисто.
+  next build — 14 маршрутов, успешно.
+  Ручная QA на изолированной базе oinau_qa8 (сид + 4 сотрудника разных
+  ролей + 7 заявок): вход, дашборд 1440/1024/390, мобильное меню, раздел
+  без прав у MANAGER, редирект анонима — ошибок в консоли нет.
+
+3.4. Зависимости
+  apps/admin: devDependencies vitest, @testing-library/*, jsdom,
+  @vitejs/plugin-react — те же версии, что в apps/web. Runtime-зависимостей
+  не добавлено.
+
+4. ПОДЭТАП 8B — BACKEND GAPS G1–G3 (выполнен 2026-09-14)
+--------------------------------------------------------
+G4 (управление сотрудниками) и G5 (признак заявки из кабинета) не
+реализовывались. Public API, кабинет клиента и RBAC-матрица не менялись.
+Миграция НЕ потребовалась: нужные индексы уже есть (audit_log —
+created_at / entity+created_at / user+created_at; stocks — PK
+product_id+warehouse_id; product_images и price_tiers — по product_id).
+
+4.1. Новые эндпоинты (все только GET)
+  G1  GET /api/v1/admin/audit                право audit.read (ADMIN, SUPERADMIN)
+      Фильтры: action, entity_type, entity_id, user_uuid, actor, request_id,
+      created_from/created_to (полуинтервал, 422 invalid_date_range),
+      page/page_size. Новые сверху. Автор — LEFT JOIN users
+      {uuid, full_name, email}; null для клиента/системы/импорта.
+      Отдаются changes и request_id; ip_hash и внутренний user_id — нет.
+  G2  GET /api/v1/admin/catalog/summary      право catalog.read (все 5 ролей)
+      products: total, active, inactive, publicly_visible, featured, draft,
+                published, archived, deleted
+      content: without_images, without_ready_images (нет READY-файла),
+               without_price (не ON_REQUEST и нет ступеней в активном
+               публичном прайсе), price_on_request
+      availability: in_stock, out_of_stock, on_request, overridden
+      categories: total, active, deleted
+      Один SQL-запрос: count(*) FILTER (WHERE …) + EXISTS + подзапрос итогов
+      остатков + скалярные подзапросы категорий. Точных количеств нет.
+  G3  GET /api/v1/admin/stock                право catalog.read (как GET
+      /products/{id}/stock; менять остатки по-прежнему только stock.write
+      через PUT /products/{id}/stock)
+      Элемент = ProductStockRead (entries по складам: quantity, reserved,
+      available, sync_source, synced_at, external_id, updated_at; итоги по
+      активным складам; public_availability; stock_display_override)
+      + name, status, is_active, pricing_type, external_id, stock_updated_at.
+      Фильтры: search (артикул/название/external_id), availability,
+      warehouse_id, sync_source (manual|excel|1c), is_active.
+      Сортировка: sku (по умолчанию), name, available_asc, available_desc,
+      updated. Удалённые товары не показываются. 4 запроса на страницу
+      независимо от её размера; раскладка и итоги — тем же
+      AdminStockService._to_read, что и карточка остатков товара.
+
+4.2. Общее правило наличия
+  inventory/availability.py: availability_expression() — SQL-форма
+  resolve_availability (CASE: override → ON_REQUEST → available>0).
+  Используется сводкой и списком остатков. Публичный каталог не трогался.
+  Эквивалентность закреплена тестом на всех 40 комбинациях.
+
+4.3. Файлы
+  backend (новые): modules/audit/{schemas,repository,service_admin,router_admin}.py;
+    modules/catalog/{schemas_admin_summary,repository_admin_summary,
+    service_admin_summary,router_admin_summary}.py
+  backend (изменены): api/v1/admin.py (подключение роутеров);
+    inventory/availability.py (+availability_expression);
+    inventory/repository_admin.py (+stock_totals_subquery, StockListSort,
+    StockListFilters, list_stock_products, list_all_warehouses,
+    list_stock_entries); inventory/schemas_admin.py (+ProductStockListItem);
+    inventory/service_admin.py (+list_stock); inventory/router_admin.py
+    (+stock_router)
+  тесты (новые): test_admin_audit.py (17), test_admin_catalog_summary.py (16),
+    test_admin_stock_list.py (18), test_availability_sql.py (80)
+  типы: packages/api-types/src/schema.d.ts перегенерирован — изменения
+    только добавляющие (0 удалённых строк).
+  admin: lib/api/types.ts (+CatalogSummary, ProductStockListItem, StockListQuery,
+    AuditLogEntry, AuditLogQuery…), lib/api/endpoints.ts (+catalogApi,
+    stockApi, auditApi), tests/endpoints.test.ts (3). UI не менялся.
+
+4.4. Проверки — см. отчёт в конце подэтапа (раздел 4.5).
+
+4.5. Проверки 8B
+  backend pytest (полный прогон): 1044 passed (было 913; +131 новых) — 15 мин.
+  ruff check app tests, ruff format --check — чисто; mypy app — чисто
+  (180 файлов); alembic check — «No new upgrade operations detected»
+  (миграций нет, upgrade/downgrade проверять нечего).
+  admin vitest: 5 файлов, 45 тестов; web vitest: 198 (первый прогон под
+  нагрузкой параллельного pytest дал 1 падение, повтор — 198/198).
+  prettier --check (репозиторий), tsc во всех пакетах, next lint (web,
+  admin), pnpm -r build (web + admin) — успешно.
+  Смоук на QA-базе oinau_qa8: summary (20 товаров, 9 категорий), stock
+  (20 строк, точные остатки), audit (29 записей); MANAGER: audit 403,
+  stock 200, summary 200.
+
+5. ПОДЭТАП 8C — ЗАЯВКИ (выполнен 2026-09-14)
+--------------------------------------------
+Backend НЕ менялся (существующего Requests API достаточно). Public
+frontend и кабинет клиента не менялись.
+
+5.1. Использованные эндпоинты
+  GET   /api/v1/admin/requests            request.read  список (status, region_id,
+        created_from/created_to, search, sort newest|oldest|updated, page/page_size)
+  GET   /api/v1/admin/requests/{id}       request.read  карточка (позиции-снапшоты,
+        комментарии, история)
+  PATCH /api/v1/admin/requests/{id}/status  request.write  ответ — обновлённая карточка
+  POST  /api/v1/admin/requests/{id}/comments request.write body + visible_to_customer
+  GET   /api/v1/public/regions            (публичный справочник для фильтра региона)
+  Отдельные GET …/comments и …/history не нужны: карточка уже содержит их.
+
+5.2. Сделано
+  /admin/requests: плотная таблица (номер+время, клиент+компания, контакты,
+    регион, состав, сумма, статус); на ≤720px — карточки без горизонтальной
+    прокрутки. Фильтры в адресе (?status=&search=&region_id=&from=&to=&sort=
+    &page=): ссылки дашборда работают, «назад» сохраняет выборку. Поиск с
+    задержкой 350 мс; смена фильтра → первая страница; даты → границы суток
+    Asia/Almaty (смещение из tz-базы), перевёрнутый период не отправляется.
+    Skeleton, пустое состояние (с разницей «нет заявок» / «ничего не найдено»
+    + «Сбросить»), ошибка с «Повторить», 403 → «Нет доступа». На телефоне
+    фильтры, кроме поиска, свёрнуты под кнопку.
+  /admin/requests/[id]: шапка (номер, статус, даты); Клиент (контакт, компания,
+    tel:/mailto:, регион, источник и тип, комментарий клиента); Состав (SKU,
+    название-снапшот, количество с единицей, цена/ед. или «По запросу», сумма
+    строки; ссылка на товар — только при catalog.read и product_id); Итого
+    (total_estimate backend, пояснение про позиции «по запросу»; ничего не
+    пересчитывается); Комментарии (бейджи «Внутренний» / «Виден клиенту»);
+    История статусов (таймлайн from → to, автор, комментарий). Десктоп: две
+    колонки (статус и история справа), мобильный: одна лента в порядке
+    статус → клиент → состав → комментарии → история.
+  Статусы — только RequestStatus из OpenAPI. backend переходы не
+    ограничивает → предлагаются все статусы, кроме текущего; «Взять в работу»
+    для NEW. Подтверждение при переходе в COMPLETED/CANCELLED/SPAM и выходе
+    из них. Toast после успеха, карточка обновляется ответом PATCH.
+    403 → toast «Нет права…», 404 → экран «Заявка не найдена», 422 → ошибка
+    у поля, 401 → общий механизм сессии (refresh, иначе вход).
+  Комментарии: внутренние по умолчанию; «Показать клиенту» → подтверждение →
+    visible_to_customer=true. Пустой не отправляется, текст не теряется при ошибке.
+  RBAC (UX): раздел — request.read (MANAGER, VIEWER, ADMIN, SUPERADMIN);
+    CONTENT_MANAGER — «Нет доступа», API не вызывается. Действия —
+    request.write (MANAGER, ADMIN, SUPERADMIN); VIEWER — «Только просмотр».
+  UI-kit: DataTable получил renderMobile (карточки на узком экране).
+
+5.3. Backend gaps
+  G5 (известен с 8A): admin-схема заявки не отдаёт customer_id и проект,
+  а у заявок из кабинета тот же source (CATALOG_CART). Поэтому признак
+  «заявка из кабинета» и проект не показываются, а подсказка к
+  visible_to_customer говорит «если заявка отправлена из личного кабинета».
+  8C не блокирует; решение отложено по договорённости (G4/G5 не делаем).
+
+5.4. Файлы
+  новые: components/requests/{RequestsList,RequestDetailScreen,RequestItems,
+    RequestStatusPanel,RequestComments,RequestHistory}.tsx,
+    Requests.module.css, RequestDetail.module.css; lib/requests.ts;
+    tests/requests.test.tsx (34 теста)
+  изменены: app/(panel)/requests/page.tsx, app/(panel)/requests/[id]/page.tsx
+    (заглушки → экраны); lib/api/types.ts, lib/api/endpoints.ts
+    (get/updateStatus/addComment, regionsApi); components/ui/DataTable.tsx
+    и .module.css (renderMobile); tests/helpers.ts (фикстуры заявок, signInAs)
+
+5.5. Проверки
+  admin vitest: 6 файлов, 79 тестов — зелёные (было 45).
+  tsc (все пакеты), next lint, prettier --check (репозиторий) — чисто.
+  pnpm -r build: admin (/requests 5.3 kB, /requests/[id] 9.2 kB) и web — успешно.
+  backend не менялся — тесты не требуются (последний полный прогон 1044 passed).
+  Живая QA на oinau_qa8 (менеджер): список 1440/390, карточка 1440/1024/390,
+  scrollWidth = ширине окна; «Взять в работу» → IN_PROGRESS + запись истории;
+  внутренний комментарий сохранён; VIEWER PATCH → 403; ошибок в консоли нет.
+
+6. ПОДЭТАП 8D — ТОВАРЫ (выполнен 2026-09-14)
+--------------------------------------------
+
+6.1. Backend gap G6 (исправлен минимально)
+  Проблема: строка GET /admin/products не содержала ни обложки, ни цены,
+  ни наличия. Таблица каталога потребовала бы 3 запроса на строку
+  (/images, /pricing, /availability — 72 запроса на страницу).
+  Решение: ответ списка расширен схемой ProductListRow(ProductListItem) —
+  main_image_url (thumb READY-файла, иначе null; storage_key не отдаётся),
+  images_count, pricing_type, currency, min_price/max_price (публичный
+  прайс, Decimal строкой), public_availability (тот же resolve_availability),
+  stock_display_override. Считается пакетно: +5 запросов на страницу
+  независимо от числа строк. Прежние поля и фильтры не менялись,
+  ProductRead и остальные эндпоинты не тронуты. Миграции нет.
+  Побочный эффект генерации: FastAPI переименовал схемы в OpenAPI
+  (app__modules__catalog__schemas__ProductListItem → ProductListItem,
+  Page_ProductListItem___1 → Page_ProductListItem_). JSON публичного API
+  не изменился; в packages/api-types/src/index.ts поправлены 2 псевдонима,
+  код витрины не менялся (web typecheck/tests/build зелёные).
+  Файлы: catalog/schemas_admin_products.py, repository_admin_products.py
+  (list_extras), service_admin_products.py, router_admin_products.py;
+  tests/test_admin_product_list_rows.py (7 тестов).
+
+6.2. Использованные эндпоинты
+  products: GET list/{id}, POST, PATCH, DELETE, POST restore,
+    PUT categories, PUT attributes
+  categories: GET tree, GET {id}/attributes; attributes: GET {id} (варианты OPTION)
+  pricing: GET/PUT products/{id}/pricing
+  inventory: GET/PUT products/{id}/stock, PATCH products/{id}/availability
+  media: POST media/upload-intent, PUT в хранилище (presigned), POST media/{uuid}/complete
+  product images: GET/POST products/{id}/images, PUT order, PUT main, DELETE {image_id}
+
+6.3. Сделано
+  /admin/products — таблица (фото, название+SKU+external_id, категория,
+    цена, наличие, статус+активность/избранный/удалён, изменён), фильтры в
+    адресе (поиск с паузой, status, is_active, is_featured, category,
+    external_id по Enter, include_deleted), сортировка, страницы, skeleton/
+    empty/error/403; на ≤720px карточки. «Новый товар» — при catalog.write.
+  /admin/products/new — основные поля, категории (основная), характеристики
+    по категориям; SKU/slug проверяются по шаблонам backend, slug «Из
+    названия» — только по кнопке; 409/422 у полей; toast и переход в карточку.
+  /admin/products/[id] — вкладки (в адресе ?tab=): Основное, Категории,
+    Характеристики, Цены, Изображения, Наличие; у каждой своё сохранение;
+    защита несохранённых изменений (подтверждение смены вкладки +
+    beforeunload). PATCH шлёт только изменения, перевод ru — целиком
+    с SEO-полями (иначе backend стёр бы их).
+    Характеристики: STRING/NUMBER/BOOLEAN/OPTION (типы backend), OPTION —
+      несколько вариантов, NUMBER — строкой до 3 знаков.
+    Цены: FIXED/FROM/TIERED/ON_REQUEST, ступени строками, проверка
+      пересечений/открытой ступени/знаков до отправки, превью по правилам
+      витрины (строка + таблица ступеней).
+    Наличие: склады (quantity, reserved, available, sync_source,
+      external_id, synced_at/updated_at), правка только активных складов
+      при stock.write, PUT только изменённых; отдельно — переопределение
+      показа на сайте (PATCH availability). Пояснение про 1С.
+    Изображения: dropzone + выбор файлов, presigned PUT (XHR с прогрессом),
+      complete, attach, стадии загрузки, ошибки (понятные причины
+      failure_reason, ошибка хранилища) с «Повторить», опрос галереи пока
+      есть PENDING/PROCESSING, превью по variants, «Главное», перестановка
+      drag-and-drop и кнопками, «Сделать главным», отвязка с подтверждением,
+      409/404 перечитывают галерею.
+    Удаление — подтверждение, 403 с явным текстом; удалённый товар —
+      баннер, всё только для чтения, «Восстановить» (409 объясняет конфликт
+      SKU/slug; активность не включается автоматически).
+  Права (UX): раздел — catalog.read; изменения — catalog.write (MANAGER и
+    VIEWER — «Только просмотр»); остатки/override — stock.write; загрузка —
+    catalog.write + media.upload. Backend остаётся границей безопасности.
+
+6.4. Файлы (admin)
+  новые: components/products/{ProductsList,ProductThumb,ProductCreateScreen,
+    ProductEditorScreen,MainFields,CategoryPicker,AttributeEditor}.tsx,
+    Products.module.css, ProductEditor.module.css,
+    components/products/sections/{Main,Categories,Attributes,Pricing,Stock,
+    Images}Section.tsx, SectionActions.tsx;
+    lib/{products,productForm,attributes,pricing,media}.ts,
+    lib/hooks/{useUrlFilters,useUnsavedGuard}.ts;
+    app/(panel)/products/new/page.tsx;
+    tests/{product-fixtures.ts,products-lib.test.ts (23),products.test.tsx (39)}
+  изменены: app/(panel)/products/page.tsx и [id]/page.tsx (заглушки → экраны),
+    lib/api/{types,endpoints}.ts, lib/decimal.ts (allowNegative),
+    components/dashboard/Dashboard.tsx (тип ProductListRow);
+    packages/api-types/src/{schema.d.ts (генерация), index.ts (2 псевдонима)}
+
+6.5. Проверки
+  backend pytest: 1051 passed (полный прогон, 13 мин); ruff, ruff format,
+    mypy (180 файлов), alembic check — чисто; миграций нет.
+  admin vitest: 8 файлов, 141 тест (было 79); web vitest: 198.
+  tsc (все пакеты), next lint (web, admin), prettier --check — чисто.
+  pnpm -r build: admin (/products 8.6 kB, /products/[id] 13.9 kB,
+    /products/new 1.5 kB) и web — успешно.
+  Smoke QA (oinau_qa8, контент-менеджер и менеджер): список 1440/1024/390,
+    карточка и вкладки 1440/1024/390 — scrollWidth = ширине окна, ошибок
+    в консоли нет. Живая загрузка 3 файлов (PNG/JPEG/WebP) через S3-эмулятор
+    moto (временный venv в scratchpad, политика бакета как в
+    infra/docker/minio/init.sh: публичны только variants/): intent → PUT →
+    complete → attach → обработка → READY, превью по thumb/large, оригинал
+    закрыт (403). arq с fakeredis не работает, поэтому обработку выполнял
+    QA-скрипт той же задачей воркера process_media. Сделать главным,
+    перестановка, создание товара через UI, удаление и восстановление —
+    проверены вживую.
+
+7. ПОДЭТАП 8E — КАТЕГОРИИ И ХАРАКТЕРИСТИКИ (выполнен 2026-09-14)
+----------------------------------------------------------------
+
+7.1. Backend gaps (исправлены минимально, миграций нет)
+  G7. Дерево GET /admin/categories/tree?include_deleted=true не позволяло
+    отличить удалённый узел от живого и не содержало parent_id — дерево
+    нельзя было показать с признаком «Удалена» без N запросов GET {id}.
+    Решение: CategoryTreeNode + parent_id, deleted_at (необязательные поля,
+    заполняются в get_tree). Публичное дерево не менялось.
+  G8. Колонка «Категории» в справочнике характеристик требовала бы
+    GET /categories/{id}/attributes для каждой категории (N запросов).
+    Решение: AttributeRead + categories: [AttributeCategoryRef{id, slug,
+    name}] — живые категории, где назначена характеристика; один пакетный
+    запрос на страницу (AdminAttributeRepository.list_assigned_categories),
+    число запросов не зависит от размера страницы.
+  Файлы: catalog/schemas_admin.py, service_admin.py, repository_admin.py;
+    tests/test_admin_catalog_tree_refs.py (5 тестов, включая число запросов).
+  OpenAPI: добавлена только схема AttributeCategoryRef, переименований нет.
+  Замечено на QA (не gap): PATCH /attributes/{id} с value_type молча
+    игнорирует поле (схема без него) — тип не меняется, 200.
+
+7.2. Использованные эндпоинты
+  categories: GET tree (include_deleted), GET {id}, POST, PATCH, DELETE,
+    POST {id}/restore, GET/PUT {id}/attributes
+  attributes: GET list (search, is_active, page), GET {id}, POST, PATCH,
+    DELETE, POST {id}/options, PATCH/DELETE {id}/options/{option_id}
+
+7.3. Сделано
+  /admin/categories — дерево (role=tree, раскрытие/сворачивание, «Развернуть
+    всё», клавиатура), slug, признаки «Скрыта»/«Удалена», число подкатегорий
+    и товаров; поиск по названию/slug с раскрытием найденного; «Удалённые».
+    Карточка справа (в адресе ?id=, создание ?new= / ?new={parent}):
+    название, slug («Из названия» по кнопке), родитель (без себя и потомков,
+    без удалённых), порядок, external_id, описание, SEO, «Активна».
+    PATCH — только изменения, перевод ru целиком. Перенос ветки с живыми
+    подкатегориями — подтверждение. 409 slug/цикл/родитель/external_id —
+    у полей; 422 — по полям. Удаление с подтверждением: 409 «есть
+    подкатегории» / «есть товары» объясняются. Восстановление: 409 «slug
+    занят» / «родитель удалён», подсказка включить скрытую категорию.
+    Drag-and-drop нет намеренно. ≤1024px — дерево или карточка.
+  Характеристики категории — список назначенных (порядок = sort_order,
+    «Обязательная»), поднять/опустить/убрать, добавить из справочника
+    (без уже назначенных), «Отменить», сохранение набора целиком (PUT).
+  /admin/attributes — таблица: название+единица, код, тип (бейдж), число
+    вариантов, категории, значений у товаров, статус (Активна/Отключена,
+    Фильтр, Скрыта на сайте); поиск и статус в адресе, страницы, мобильные
+    карточки. Боковая панель: создание (код + тип значения, варианты для
+    «Список» сразу), правка (код и тип — только для чтения с пояснением
+    «Не меняется»), PATCH только изменений; 409 кода — у поля. Варианты
+    OPTION: добавление/правка/удаление по одному (409 slug — у поля,
+    409 «вариант выбран у товаров»). «Где используется» — ссылки на
+    категории; удаление с перечнем категорий, 409 «используется в товарах».
+  Интеграция: назначенные категории характеристики появляются в карточке
+    товара (вкладка «Характеристики», 8D) в группе категории вместо
+    «Не назначены категориям товара»; значения сохраняются как раньше.
+  Права (UX): просмотр — catalog.read, изменения — catalog.write; MANAGER
+    и VIEWER — «Только просмотр» (в меню разделы им по-прежнему не
+    показываются — решение 8A, по ссылке открываются только для чтения).
+  Попутно: Dialog — фокус первого поля без :is() со списком селекторов
+    (jsdom его не разбирал, панели характеристик падали в тестах);
+    пункт меню «Атрибуты» → «Характеристики» (как в разделе и в товаре);
+    иконка chevronUp.
+
+7.4. Файлы (admin)
+  новые: components/categories/{CategoriesScreen,CategoryTree,CategoryPanel,
+    CategoryAttributesEditor}.tsx, Categories.module.css;
+    components/attributes/{AttributesScreen,AttributeDrawer,
+    OptionsManager}.tsx, Attributes.module.css;
+    lib/{categories,attributeForm}.ts;
+    tests/{catalog-fixtures.ts, catalog-lib.test.ts (10),
+    categories-attributes.test.tsx (53)}
+  изменены: app/(panel)/{categories,attributes}/page.tsx (заглушки → экраны),
+    lib/api/{types,endpoints}.ts, lib/navigation.ts, components/ui/{Icon,
+    Dialog}.tsx, tests/shell.test.tsx; packages/api-types/src/schema.d.ts
+
+7.5. Проверки
+  backend pytest: 1056 passed (было 1051, +5), 11.5 мин; ruff check,
+    ruff format --check (225 файлов), mypy (180 файлов) — чисто;
+    alembic check — «No new upgrade operations detected».
+  admin vitest: 10 файлов, 204 теста (было 141, +63); web vitest: 198.
+  tsc (все пакеты), next lint (admin, web), prettier --check — чисто.
+  pnpm -r build: admin (/categories 11.6 kB, /attributes 9.3 kB) и web — успешно.
+  Smoke QA (oinau_qa8): API-скрипт 30/30 — вложенное создание, цикл 409,
+    slug 409, удаление с детьми/товарами 409, 422, перенос в корень,
+    удаление/include_deleted/восстановление (409 slug → 200), 404;
+    характеристика OPTION, код 409, value_type не меняется, варианты
+    (добавить, 409 slug, правка), назначение категории (PUT, 404),
+    attribute.categories, значение у товара → 409 option/attribute in use;
+    MANAGER: чтение 200, изменения 403.
+    UI (контент-менеджер, менеджер): категории 1440/1024/390 (дерево и
+    карточка), создание, характеристики 1440/1024/390 и панель 1440/1024/390,
+    карточка товара QA-SEAT-01 — назначенная «QA покрытие» в группе
+    категории, «Не назначены» нет; scrollWidth = ширине окна везде,
+    ошибок в консоли нет. MANAGER — «Только просмотр», без кнопок изменений.
+    QA-данные (категории qa8e-*, характеристика qa8e_finish) остались
+    в изолированной базе oinau_qa8.
+
+8. ПОДЭТАП 8F — СКЛАД (выполнен 2026-09-14)
+--------------------------------------------
+
+8.1. Анализ API и backend gap
+  G3 (GET /admin/stock из 8B) покрывает список: товар, SKU, внешний код,
+  строки по складам (quantity, reserved, available, sync_source,
+  external_id, synced_at, updated_at, warehouse_is_active), итоги по
+  активным складам, public_availability, stock_display_override; фильтры
+  search / warehouse_id / sync_source / availability / is_active,
+  сортировка (sku, name, available_asc/desc, updated), страницы.
+  Склады: GET (is_active, страницы), POST, PATCH; кода в WarehouseUpdate
+  нет (неизменяем), удаления нет. Правка: PUT /products/{id}/stock (upsert
+  по складам, Decimal, reserved <= quantity, 409 warehouse_inactive /
+  product_deleted, 404), PATCH /products/{id}/availability.
+  G9. В строке списка остатков не было категории — колонку пришлось бы
+    добирать запросом на каждый товар. Решение: ProductStockListItem +
+    primary_category (та же схема ProductCategoryRead, что в списке
+    товаров), один пакетный запрос на страницу
+    (AdminStockRepository.list_primary_categories). Миграции нет.
+    Файлы: inventory/schemas_admin.py, repository_admin.py,
+    service_admin.py; tests/test_admin_stock_list_categories.py (4 теста:
+    форма поля и совпадение со списком товаров, товар без категории,
+    неосновная категория не считается основной, число запросов).
+    OpenAPI: одно новое поле, переименований схем нет.
+  RBAC: чтение — catalog.read, изменение остатков, складов и показа
+    наличия — stock.write (так в backend). Матрица не менялась; проблем
+    не найдено: MANAGER и VIEWER не имеют stock.write.
+  Замечено (не gap): PUT stock возвращает reserved в форме запроса
+    («1.5»), GET — с точностью колонки («1.500»); значение одинаковое,
+    интерфейс форматирует оба.
+
+8.2. Сделано
+  /admin/stock — вкладки «Остатки» и «Склады» (?tab=warehouses).
+  Остатки: таблица (товар + SKU + код 1С, категория, склады со свободным
+    остатком и меткой «Отключён», остаток / резерв / свободно, источник и
+    время синхронизации/изменения, наличие на сайте + «Вручную»); цифры —
+    итог по активным складам или по выбранному складу (пояснение над
+    таблицей). Поиск с паузой, фильтры склада, источника, наличия,
+    сортировка, страницы — всё на backend и в адресе; «Сбросить фильтры»;
+    skeleton / ошибка с повтором / пусто / «Ничего не найдено» / 403;
+    мобильные карточки с тремя плитками ОСТАТОК / РЕЗЕРВ / СВОБОДНО.
+  Панель товара: по складу — плитки ОСТАТОК, РЕЗЕРВ, СВОБОДНО (зелёная /
+    красная), источник, код во внешней системе, синхронизация, изменено;
+    отключённый склад — только просмотр. Правка при stock.write:
+    предупреждение «Ручное изменение используется до подключения 1C.»,
+    Decimal строкой (запятая, до 3 знаков, без Number), резерв <= остатка,
+    PUT только изменённых складов; свободный остаток не пересчитывается на
+    экране («Пересчитается после сохранения») — показывается ответ сервера,
+    список перечитывается. 422 — у полей склада, 409 warehouse_inactive —
+    объяснение и перечитывание, product_deleted, 404, 403.
+  Публичное наличие: объяснение (остаток и наличие — разные вещи,
+    переопределение не меняет quantity/reserved, влияет только на сайт),
+    текущий статус и «Задано вручную / По остаткам», PATCH availability,
+    затем перечитывание статуса с сервера.
+  Склады: таблица (название, код, регион, внешний код, источник, статус),
+    фильтр статуса, страницы, мобильные карточки. Создание (код по шаблону
+    backend), правка (код только для чтения с пояснением), PATCH только
+    изменений, отключение — с подтверждением; 409 код / внешний код — у
+    полей, 422 по полям, 404 — сообщение и перечитывание, 403. Удаления нет.
+  Права (UX): раздел — catalog.read; изменения — stock.write; MANAGER и
+    VIEWER видят всё только для чтения.
+  Попутно: логика остатков 8D (подписи источника, варианты показа, черновик
+    и тело PUT) вынесена в lib/stock.ts и используется и во вкладке
+    «Наличие» карточки товара; 422 там теперь тоже раскладывается по полям.
+
+8.3. Файлы
+  backend: см. 8.1; packages/api-types/src/schema.d.ts (генерация).
+  admin новые: components/stock/{StockScreen,StockList,StockDrawer,
+    WarehousesPanel}.tsx, Stock.module.css; lib/stock.ts;
+    tests/{stock-fixtures.ts, stock-lib.test.ts (9), stock.test.tsx (31)}
+  admin изменены: app/(panel)/stock/page.tsx (заглушка → экран),
+    lib/api/{types,endpoints}.ts (Warehouse*, warehousesApi),
+    components/products/sections/StockSection.tsx (на lib/stock).
+
+8.4. Проверки
+  backend pytest: 1060 passed (было 1056, +4; exit 0 — итоговая строка
+    скрыта: -q в addopts плюс -q в команде; 1060 подтверждено
+    --collect-only); ruff check, ruff format --check (226 файлов),
+    mypy (180 файлов) — чисто; alembic check — «No new upgrade operations
+    detected», миграций нет.
+  admin vitest: 12 файлов, 244 теста (было 204, +40); web vitest: 198.
+  tsc (все пакеты), next lint (admin, web), prettier --check — чисто.
+  pnpm -r build: admin (/stock 10.6 kB) и web — успешно.
+  Smoke QA (oinau_qa8): API-скрипт 32/33 (единственное расхождение — формат
+    «1.5» vs «1.500», см. 8.1): склады (список content/manager/viewer,
+    создание, 409 код, 422, код не меняется, 403 менеджеру, 404), остатки
+    (G9, фильтры, Decimal 12.345 и 99999999999.999 без округления, 422
+    резерва и знаков, 404, 409 отключённый склад), MANAGER/VIEWER PUT и
+    PATCH → 403, override OUT_OF_STOCK не меняет остаток, снятие → расчёт.
+    UI (контент-менеджер): список 1440/1024/390, фильтр склада, панель
+    1440/1024/390, правка 25,5 / 3 → свободно 22,5 из ответа, ошибка
+    резерва, override → «Нет в наличии» + «Задано вручную», склады
+    1440/390, «Новый склад» на 390. MANAGER: панель без полей и кнопок,
+    селект показа отключён, склады без создания и правки. scrollWidth =
+    ширине окна везде, ошибок в консоли нет. Остатки и показ товара AV-820
+    возвращены; в базе остался QA-склад qa8f-north (отключён).
+
+9. ПОДЭТАП 8G — CMS (выполнен 2026-09-15)
+------------------------------------------
+Backend не менялся. Витрина не менялась.
+
+9.1. Анализ API и backend gaps
+  Существующего API достаточно: GET /admin/content (сводка), GET/PUT
+  /admin/content/{home|contacts|delivery|faq|requisites|settings} —
+  типизированные схемы (extra="forbid"), PUT заменяет раздел целиком;
+  медиа — upload-intent (purpose CONTENT) → PUT → complete, GET /media
+  (status=READY), GET /media/{uuid}. 404 media_not_found / 409 media_failed
+  при сохранении ссылки на отсутствующий/отклонённый файл.
+  G10 (НЕ исправлялся, решение за владельцем): права content.read в backend
+    нет — чтение и запись CMS требуют content.write. Без него 8G возможен:
+    экран закрыт тем же правом, что backend. Режим «только просмотр» для
+    роли без content.write возможен только после появления такого права.
+  Замечания: hero.image и точка карты хранятся, но текущий дизайн главной
+    hero.image не выводит (фиксированная фотография) — сказано в подсказке;
+    витрина кеширует CMS на 300 с (ISR) — toast говорит «в течение 5 минут».
+
+9.2. Сделано
+  * /content — обзор 6 разделов (статус, дата изменения, «Редактировать»,
+    «Открыть страницу» на витрине); /content/[section] — вкладки разделов,
+    неизвестный ключ — «Раздел не найден».
+  * Общий SectionEditor: загрузка (скелетон, ошибка + «Повторить», 403 →
+    «Нет доступа»), сворачиваемые панели (раскрываются при ошибке внутри),
+    липкая панель «Отменить / Сохранить», подтверждение отмены, toast,
+    фокус на первом поле с ошибкой, сводка ошибок без поля на экране.
+  * Формы — lib/content/{home,contacts,delivery,faq,requisites,settings,
+    seo}.ts: fromData → форма → toPayload поле за полем по сгенерированным
+    типам (пустое необязательное — null, лишних ключей нет). Проверки
+    повторяют backend: RU обязателен, запрет HTML и переводов строк в
+    однострочных полях, длины по символам, ссылка (путь/http(s), без //,
+    javascript:), https для соцсетей, телефон по правилу заявок, email,
+    координаты парой, БИН/IBAN (mod 97)/БИК/КБе, пары «текст+ссылка кнопки»,
+    уникальность соцсетей, пределы списков. 422 backend — по путям полей.
+  * Локализация: переключатель «Казахская версия (KK)» (включён, если kk
+    уже заполнен); KK без RU не сохраняется.
+  * FAQ: добавление (фокус в новый вопрос), порядок ↑↓, удаление с
+    подтверждением (пустой — без), счётчик N из 100, предпросмотр RU.
+    Преимущества, способы доставки, телефоны, email, соцсети — тот же
+    ListEditor.
+  * MediaField: превью только по ссылкам вариантов, статус/размер, опрос
+    PENDING/PROCESSING, «Загрузить/Заменить» (catalog.write+media.upload),
+    «Из медиатеки» (catalog.read, только READY, поиск, страницы), «Убрать»
+    удаляет лишь ссылку. 404/409 при сохранении — у поля с этим UUID.
+    lib/media.ts: общий uploadMediaFile(file, purpose) (товары — PRODUCT).
+  * Несохранённые изменения (useLeaveGuard): beforeunload, перехват
+    внутренних ссылок (меню, крошки) с подтверждением, смена раздела.
+    Кнопку «Назад» браузера App Router отменить не даёт.
+  * Главная: предпросмотр акцента заголовка (предпоследнее слово, как в
+    Hero витрины). Настройки: ссылка на «Контакты» (телефон/email/WhatsApp
+    сайта задаются там — полей в SiteSettings нет).
+
+9.3. Файлы (admin)
+  новые: app/(panel)/content/[section]/page.tsx;
+    components/content/{ContentScreens,SectionEditor,FormContext,fields,
+    MediaField,MediaLibraryDialog,SeoPanel}.tsx, Content.module.css,
+    sections/{Home,Contacts,Delivery,Faq,Requisites,Settings}Fields.tsx;
+    lib/content/{fields,sections,errors,seo,home,contacts,delivery,faq,
+    requisites,settings}.ts; lib/hooks/useLeaveGuard.ts;
+    tests/{content-fixtures.ts, content-lib.test.ts (21), content.test.tsx (51)}
+  изменены: app/(panel)/content/page.tsx (заглушка → обзор),
+    lib/api/types.ts (псевдонимы CMS/медиатеки), lib/api/endpoints.ts
+    (contentApi, mediaApi.list, purpose в uploadIntent), lib/media.ts.
+
+9.4. Проверки
+  admin vitest: 14 файлов, 316 тестов (было 244, +72).
+  tsc --noEmit, next lint, prettier --check (весь репозиторий) — чисто.
+  next build (admin): /content, /content/[section] — успешно.
+  backend не менялся: pytest не запускался; alembic check на oinau_qa8 —
+    «No new upgrade operations detected», миграций нет.
+  Smoke QA (oinau_qa8, moto S3, qa_worker, admin :3001, web :3000):
+    контент-менеджер — обзор; FAQ: правка, новый вопрос первым, превью,
+    сохранение → public API и страница /faq витрины показывают новые
+    данные (после ISR-обновления); HTML в ответе — ошибка, «Сбросить»;
+    уход по пункту меню → диалог, «Остаться» сохраняет правку;
+    перезагрузка после настоящего ввода → beforeunload, правка на месте
+    (при вводе через JS Chrome диалог не показывает — нет жеста);
+    главная: подзаголовок + загрузка og:image → READY-превью
+    content/*/variants/thumb → сохранение → public API и <meta og:image>
+    витрины с URL варианта, файл отдаётся 200. Все 6 разделов и обзор на
+    1440/1024/390 (панели раскрыты) — scrollWidth = ширине окна.
+    MANAGER/VIEWER: пункта нет, /content и /content/faq — «Нет доступа»;
+    API GET/PUT → 403 (content-менеджер: 200 / 422 на неверное тело).
+    Консоль без ошибок. Найдено и исправлено в QA: свёрнутая панель
+    оставалась видимой (display:flex перебивал hidden) — .panelBody[hidden],
+    проверено в браузере и тестом. Разделы CMS в oinau_qa8 восстановлены
+    из дампа до QA; в медиатеке остался файл qa-rope.png (CONTENT).
+
+9.5. Осталось на 8H
+  Импорт/экспорт XLSX (раздел /import-export — пока заглушка). G10
+  (content.read) — только по решению владельца.
+
+10. ПОДЭТАП 8H — EXCEL И СОТРУДНИКИ (выполнен 2026-09-17)
+---------------------------------------------------------
+Витрина, кабинет клиента и аутентификация не менялись. Миграций нет:
+модели не трогались.
+
+10.1. Анализ
+  Excel: API этапа 5E достаточно, новых эндпоинтов не понадобилось.
+    GET  /admin/catalog/export            catalog.read
+    GET  /admin/catalog/imports/template  catalog.read
+    POST /admin/catalog/imports/preview   catalog.read  (multipart, file=)
+    POST /admin/catalog/imports/{uuid}/commit  catalog.write (тот же файл)
+    GET  /admin/catalog/imports           catalog.read (status, страницы)
+    GET  /admin/catalog/imports/{uuid}    catalog.read (ошибки целиком)
+  G4 (управление сотрудниками) подтверждён: в backend был только
+    GET /admin/users (список). Создания, смены роли, отключения и сброса
+    пароля не существовало — реализованы (см. 10.2). Матрица «роль →
+    права» наружу не отдавалась: добавлен read-only эндпоинт, чтобы
+    админка объясняла состав роли, не держа копию матрицы.
+
+10.2. Backend (минимальное дополнение, новых прав нет)
+  /api/v1/admin/users — всё закрыто существующим правом user.manage:
+    GET    ""            Page[UserRead]; фильтры search (имя/email), role,
+                         is_active, страницы. Отключённые — в конце списка,
+                         дальше по имени. Прежней формы UserListResponse
+                         больше нет (её никто не читал).
+    GET    /roles        list[RolePermissionsRead] — ROLE_PERMISSIONS как есть.
+    POST   ""            UserCreate -> 201 UserRead (пароль только на вход).
+    GET    /{uuid}       UserRead.
+    PATCH  /{uuid}       UserUpdate: full_name, phone, role, is_active,
+                         password. Email неизменяем (extra=forbid -> 422).
+  Правила (app/modules/users/service_admin.py):
+    * пароль хешируется общим hash_password (argon2id), в ответах и
+      в журнале аудита его нет ни в каком виде;
+    * отключение и смена пароля отзывают все refresh-токены сотрудника;
+      password_changed_at обесценивает выданные access-токены сразу
+      (get_current_user читает пользователя из БД на каждый запрос);
+    * нельзя отключить себя (409 self_deactivation) и сменить себе роль
+      (409 self_role_change);
+    * управлять учётной записью SUPERADMIN и назначать эту роль может
+      только SUPERADMIN (403 superadmin_required) — иначе ADMIN
+      (у него есть user.manage) поднял бы себе права до api_key.manage;
+    * занятый email — 409 email_exists (плюс guard_unique на индекс
+      uq_users_email: предварительный SELECT не закрывает гонку);
+    * удаления сотрудника через API нет: увольнение — это is_active=false,
+      запись остаётся автором комментариев и аудита.
+  Аудит — существующий AuditService, entity_type "user":
+    user.created, user.updated (старое/новое по полям + revoked_sessions),
+    user.password_reset. Новых таблиц нет.
+  UserRead дополнен полем updated_at (нужно списку; /auth/me тоже отдаёт).
+  CORS: expose_headers += Content-Disposition. Без этого браузер скрывает
+    заголовок от кода на другом источнике (админка :3001, API :8000),
+    и выгрузка сохранялась под запасным именем — найдено в QA.
+
+10.3. Frontend — /import-export (было: заглушка)
+  * Экспорт: «Скачать каталог (XLSX)» и «Пустой шаблон». Книгу собирает
+    backend; имя файла берётся из Content-Disposition, запасное —
+    oinau-catalog.xlsx. Ошибка — тост, файл не сохраняется.
+  * Импорт тремя шагами: Файл -> Проверка -> Применение.
+    Шаг 1: dropzone и выбор файла; расширение, пустой файл и размер
+      (15 МБ, как UPLOAD_MAX_SIZE_MB) проверяются до отправки; отказ
+      backend (415/413/422) переводится в понятный текст.
+    Шаг 2: отчёт предпросмотра — сводка по четырём сущностям
+      (создать/изменить/без изменений), ошибки и предупреждения
+      отдельными блоками (сворачиваются, раскрываются по 20 записей),
+      список «что изменится у товаров» (строка, sku, части: цены,
+      категории, тексты). Ошибки блокируют применение, предупреждения —
+      нет. Файл без изменений: «применять нечего», кнопка недоступна.
+    Шаг 3: подтверждение диалогом со сводкой -> commit тем же файлом
+      (File держится в состоянии) -> итог, ссылка на товары, «импортировать
+      ещё». Отказ (409/422) показывает причину и ошибки повторной
+      проверки из details.errors; экран остаётся на шаге проверки.
+  * История: таблица (дата, файл, статус, строк, +/~/=, ошибки и причина),
+    фильтр по статусу в адресе, страницы, мобильные карточки; строка
+    открывает отчёт импорта в боковой панели. Внутренних id и ключей
+    хранилища в интерфейсе нет.
+  * Права: раздел открыт с catalog.read (backend разрешает экспорт,
+    шаблон, предпросмотр и историю), кнопка «Применить импорт» — только
+    с catalog.write. Пункт меню тоже переведён на catalog.read
+    (изменение решения 8A; тесты навигации обновлены).
+
+10.4. Frontend — /users (было: заглушка 8I)
+  * Список: поиск, фильтры «Роль» и «Доступ» в адресе, страницы,
+    мобильные карточки, «Это вы» у себя, подпись роли и её смысл.
+  * Карточка (боковая панель): заведение (email, имя, телефон, роль,
+    пароль) и правка (имя, телефон, роль, доступ, новый пароль).
+    Email при правке только показывается. Права выбранной роли —
+    из /users/roles. Ниже списка — карточки всех пяти ролей.
+  * Ограничения повторяют backend: своя роль и свой доступ недоступны,
+    учётная запись SUPERADMIN у не-суперадминистратора открыта только
+    для чтения, роль SUPERADMIN не предлагается в списке. Отключение
+    и смена пароля требуют подтверждения и предупреждают об отзыве
+    сессий. 409/403/422 backend раскладываются по полям формы.
+  * Запросы уходят только внутри RequirePermission: роль без user.manage
+    получает «Нет доступа» и не делает заведомо 403-запросов.
+
+10.5. Файлы
+  backend новые: app/modules/users/{service_admin.py, integrity.py},
+    tests/test_admin_users.py (39 тестов)
+  backend изменены: app/modules/users/{router_admin.py, schemas.py,
+    repository.py, exceptions.py}, app/core/middleware.py,
+    tests/test_catalog_export.py (+1 тест на expose_headers)
+  admin новые: components/imports/{ImportExportScreen, ExportPanel,
+    ImportWizard, IssueList, ImportHistory}.tsx, ImportExport.module.css;
+    components/users/{UsersScreen, UserDrawer}.tsx, Users.module.css;
+    lib/{imports.ts, users.ts, download.ts};
+    tests/{imports-lib, imports, users-lib, users}.test.* и
+    tests/{import-fixtures, user-fixtures}.ts
+  admin изменены: app/(panel)/{import-export,users}/page.tsx,
+    lib/api/{client.ts (rawDownload/rawUpload), endpoints.ts
+    (importsApi, usersApi), types.ts}, lib/auth/session.ts
+    (withAccessToken и adminDownload/adminUpload), lib/navigation.ts,
+    tests/{helpers.ts, endpoints.test.ts, lib.test.ts, shell.test.tsx}
+
+10.6. Проверки
+  admin vitest: 18 файлов, 404 теста (было 316, +88) — зелёные.
+  tsc --noEmit, next lint, prettier --check (весь репозиторий) — чисто.
+  next build: 16 маршрутов, /import-export и /users собираются.
+  backend pytest: 1100 passed за 18 минут (было 1060; +39 сотрудники,
+    +1 экспорт/CORS).
+  ruff check, ruff format, mypy app — чисто.
+  alembic upgrade head -> check -> downgrade -1 -> upgrade head -> check:
+    «No new upgrade operations detected» на обеих проверках (своей миграции
+    в 8H нет — модели не менялись).
+
+10.7. Smoke QA (oinau_qa8, backend :8000, admin :3001, Chrome headless)
+  Импорт/экспорт (контент-менеджер):
+    экспорт -> файл oinau-catalog-20260917-135918.xlsx (имя из заголовка
+      после исправления CORS), 19 314 байт — совпадает с ответом API;
+    .csv отклонён до отправки, запроса к backend нет;
+    битая книга (пустой sku, цена -100) -> 8 ошибок с листом, строкой
+      и колонкой, «Применить импорт» недоступно;
+    правленый экспорт (бренд AV-820) -> «Ошибок нет, изменений 1» ->
+      подтверждение -> «Каталог обновлён», история сразу показывает
+      «Применён»; в БД products.brand = «QA Импорт 8H»,
+      import_jobs: INVALID и COMMITTED, аудит catalog_import.committed.
+  Сотрудники (администратор): список 7 человек, заведение
+    qa.kadr@oinau.kz (argon2id-хеш в БД, в аудите только email/имя/роль),
+    смена роли CONTENT_MANAGER -> VIEWER вместе с отключением через
+    подтверждение (аудит user.updated с old/new и revoked_sessions);
+    свои роль и доступ заблокированы, карточка SUPERADMIN у ADMIN
+    только для чтения.
+  RBAC через API (скрипт qa_users_api.py):
+    GET /users: SUPERADMIN/ADMIN 200; MANAGER/CONTENT_MANAGER/VIEWER 403;
+      аноним 401;
+    экспорт и история импортов: MANAGER, VIEWER, CONTENT_MANAGER — 200;
+    commit: MANAGER 403, VIEWER 403, CONTENT_MANAGER 200;
+    самоотключение 409, смена своей роли 409, ADMIN -> SUPERADMIN 403
+      (и на правку, и на заведение), MANAGER на PATCH 403;
+    отключение: выданный access-токен сразу 401, повторный вход 401;
+    смена пароля администратором: старый токен 401, старый пароль 401,
+      новый пароль 200, пароля в ответе нет;
+    смена email 422, повторный email 409, /users/roles отдаёт 5 ролей.
+  Ширины 1440/1024/390 на /users и /import-export (включая отчёт
+    предпросмотра и боковую панель): scrollWidth = ширине окна,
+    мобильные карточки вместо таблиц. Консоль без ошибок.
+  Остатки QA в oinau_qa8: сотрудники root@oinau.kz (SUPERADMIN),
+    qa.kadr@oinau.kz (VIEWER, отключён), qa.temp@oinau.kz (пароль
+    qa-new-password-8h-x); товар AV-820 с брендом «QA Импорт 8H»;
+    записи в import_jobs.
+
+10.8. Известные ограничения (не дефекты)
+  * Фильтров экспорта в backend нет — выгружается весь живой каталог.
+  * Файл на подтверждение отправляется повторно: сервер его не хранит.
+  * История импортов не показывает автора: API отдаёт только внутренний
+    created_by_id, имени в схеме нет (менять API ради этого не стали).
+  * Роль VIEWER видит раздел импорта и может проверить файл — так
+    задано правами backend этапа 5E.
+  * G10 (content.read) по-прежнему открыт — решение владельца.
+
+10.9. Осталось на 8I
+  Аудит (раздел /audit — заглушка), завершение дашборда сводкой
+  каталога (G2), документация. Сделано в 8I (раздел 11).
+
+
+11. ПОДЭТАП 8I — АУДИТ, ДАШБОРД, ФИНАЛЬНЫЙ QA (выполнен 2026-09-18)
+===================================================================
+Backend НЕ менялся: ни одной строки в apps/backend и packages.
+Все данные раздела уже отдавали эндпоинты этапа 8B.
+
+11.1. Анализ API
+  GET /api/v1/admin/audit (право audit.read, ADMIN и SUPERADMIN):
+    фильтры action, entity_type, entity_id, user_uuid, actor,
+    request_id, created_from, created_to (полуинтервал), page,
+    page_size (<= 60). Ответ Page[AuditLogRead]:
+    id, created_at, action, actor, entity_type, entity_id,
+    user {uuid, full_name, email} | null, changes (JSONB), request_id.
+    Поиска по тексту НЕТ — в интерфейсе его и нет.
+    ip_hash backend наружу не отдаёт (проверено на живом API).
+  GET /api/v1/admin/catalog/summary (право catalog.read):
+    products (total/active/inactive/publicly_visible/featured/
+    draft/published/archived/deleted), content (without_images,
+    without_ready_images, without_price, price_on_request),
+    availability (in_stock/out_of_stock/on_request/overridden),
+    categories (total/active/deleted).
+  Псевдонимы типов (AuditLogEntry, AuditLogPage, AuditLogQuery,
+    CatalogSummary) и клиенты auditApi/catalogApi уже были в 8B —
+    перегенерация схемы не потребовалась.
+
+11.2. Раздел «Аудит» (/audit; было: заглушка)
+  Таблица «когда / действие / объект / кто / изменения» с подробной
+  боковой карточкой. Новые записи сверху, страница 30 записей.
+  Фильтры (только те, что объявил backend), все в адресе:
+    раздел (entity_type), действие (action), источник (actor),
+    сотрудник (user_uuid), период (from/to границами суток Алматы).
+    Выбор раздела сужает список действий: действие принадлежит
+    разделу, и прежний выбор дал бы заведомо пустую выборку.
+    Обратный период ловится до запроса (backend ответил бы 422).
+    entity_id и request_id читаются из адреса и показываются
+    снимаемыми метками — так работает переход «весь этот запрос»
+    из карточки записи.
+  Подписи действий (lib/audit.ts) — копия констант backend
+    (*AuditAction, 60 значений). Неизвестное действие или раздел
+    показываются кодом: новое событие backend не теряется.
+  Ссылка на объект строится только там, где он открывается по
+    числовому id: product / product_pricing / product_stock /
+    product_availability -> /products/{id}, request -> /requests/{id},
+    category / category_attributes -> /categories?id={id}.
+    У файла, импорта и сотрудника адрес админки — по uuid,
+    которого в журнале нет, поэтому ссылки нет.
+  Карточка записи разбирает changes: пара {"old": …, "new": …} —
+    в «было → стало», остальное значением, вложенное — как JSON.
+  Секретные ключи (password, secret, token, storage_key, ip_hash,
+    api_key, credential) не выводятся, даже если однажды попадут в
+    журнал. Сейчас backend их туда не пишет — проверка страховочная.
+  Список сотрудников для фильтра запрашивается только при праве
+    user.manage: иначе это был бы гарантированный 403.
+  Раздел доступен только для чтения: кроме GET он ничего не шлёт.
+
+11.3. Дашборд (было: счётчики списками, сводка не подключена — G2)
+  Активные товары и категории теперь берутся из сводки каталога —
+    один запрос вместо двух списков с page_size=1; у карточки товаров
+    появилась подпись «N видны на сайте» (publicly_visible).
+  Новая карточка «Каталог» с двумя группами счётчиков:
+    «Требует внимания» — без изображений (+ «N без готовых»),
+      без цены (+ «N по запросу»), черновики, отключены;
+    «Наличие на сайте» — в наличии / нет в наличии / под заказ
+      (ссылки на /stock?availability=…), задано вручную.
+    Ссылки ведут только туда, где у списка есть такой фильтр:
+    фильтров «без изображения» и «без цены» в backend нет, поэтому
+    эти счётчики без ссылок, а у карточки есть «Все товары».
+  Новая карточка «Разделы сайта» (только при content.write):
+    шесть разделов CMS из GET /admin/content, свежие сверху,
+    «изменён …» или «не заполнен», ссылка в /content/{key}.
+  Счётчики заявок по-прежнему из total списков — отдельного
+    эндпоинта у backend нет.
+  Блоки грузятся и падают независимо, каждый со скелетоном и
+    «Повторить»; блоки без права не запрашиваются.
+  Своих метрик экран не считает — аналитикой дашборд не стал.
+
+11.4. Навигация и права (аудит после 8A–8H)
+  Видимость разделов подтверждена тестами tests/rbac.test.tsx:
+    SUPERADMIN и ADMIN — все десять разделов;
+    CONTENT_MANAGER — без «Заявок», «Пользователей» и «Аудита»;
+    MANAGER — Dashboard, Заявки, Товары, Склад, Импорт / экспорт;
+    VIEWER — то же самое (у него есть request.read и catalog.read).
+  Исправлено расхождение: экраны разделов запрашивали данные ДО
+    проверки прав, и роль без права получала гарантированный 403
+    вместо экрана «Нет доступа». Теперь RequirePermission стоит во
+    всех разделах (заявки, товары, карточка и создание товара,
+    категории, характеристики, склад, контент — аудит и
+    пользователи так работали с 8H). Проверено и в браузере:
+    у менеджера на /audit и /users уходят только /auth/refresh
+    и /auth/me.
+  Права экранов совпадают с backend, а не с меню: у категорий и
+    характеристик чтение требует catalog.read, поэтому VIEWER по
+    прямому адресу видит их только для чтения (кнопок правки нет),
+    хотя в меню их нет — правило видимости меню из 8A («есть ли
+    смысл открывать раздел») не меняли.
+  Создание товара и разделы CMS закрыты catalog.write и
+    content.write соответственно — как в backend (G10 в силе:
+    чтение CMS тоже требует content.write).
+
+11.5. Полировка (только реальные расхождения)
+  * Бейджи в журнале растягивались на всю ячейку — колонка выровнена
+    по левому краю, как в «Пользователях».
+  * На планшете (<= 900px) в журнале прячется код действия: подпись
+    рядом говорит то же, полный код есть в карточке.
+  * Дашборд: у обеих таблиц появились мобильные карточки — раньше
+    они были единственными таблицами без renderMobile.
+  * Ссылка «Все товары» в шапке карточки больше не переносится.
+  * Обратный период в журнале объясняется отдельным пустым
+    состоянием, а не общим «Записей не найдено».
+  * Удалён SectionPlaceholder — заглушек в админке не осталось.
+  Заголовки, хлебные крошки, состояния 403/404, тосты,
+  подтверждения, пагинация и URL-фильтры сверены по всем разделам:
+  других расхождений не нашлось, визуальное направление не менялось.
+
+11.6. Безопасность (финальная проверка фронтенда)
+  * В состоянии интерфейса нет паролей и токенов: access-токен
+    по-прежнему живёт только в памяти модуля, refresh — в httpOnly
+    cookie. Сессионное поведение не менялось.
+  * storage_key и приватные URL медиа нигде не выводятся;
+    ip_hash backend не отдаёт.
+  * changes в журнале проходят через фильтр секретов.
+  * Роли без права не отправляют запросов (проверено тестами и
+    в браузере через performance.getEntriesByType('resource')).
+  * Прямые адреса для роли без права дают «Нет доступа»,
+    анонимный заход — редирект на /login?next=…
+  * Мутаций у read-only ролей нет: карточки склада, категорий и
+    характеристик у VIEWER открываются без кнопок сохранения.
+
+11.7. Файлы
+  Создано:
+    src/lib/audit.ts
+    src/components/audit/AuditScreen.tsx
+    src/components/audit/AuditDetails.tsx
+    src/components/audit/Audit.module.css
+    tests/audit.test.tsx, tests/audit-lib.test.ts,
+    tests/audit-fixtures.ts, tests/rbac.test.tsx
+  Изменено:
+    src/app/(panel)/audit/page.tsx
+    src/components/dashboard/Dashboard.tsx, Dashboard.module.css
+    src/components/{requests/RequestsList,requests/RequestDetailScreen,
+      products/ProductsList,products/ProductEditorScreen,
+      products/ProductCreateScreen,categories/CategoriesScreen,
+      attributes/AttributesScreen,stock/StockScreen,
+      content/ContentScreens}.tsx — RequirePermission
+    tests/shell.test.tsx
+  Удалено:
+    src/components/layout/SectionPlaceholder.tsx
+
+11.8. Проверки
+  admin vitest: 21 файл, 458 тестов (было 404, +54) — зелёные.
+  tsc --noEmit — чисто.
+  next lint — без предупреждений.
+  prettier --check . (весь репозиторий) — чисто.
+  next build — 16 маршрутов, /audit собирается (9.37 kB).
+  Backend не менялся, поэтому pytest/ruff/mypy/alembic не запускались:
+  git diff по apps/backend и packages пуст.
+
+11.9. Smoke QA (oinau_qa8, backend :8000, admin :3001, Chrome headless)
+  Вход/выход: вход администратором, прямой адрес /audit без сессии ->
+    /admin/login?next=%2Faudit, после выхода -> /admin/login и признак
+    сессии в localStorage очищен.
+  Дашборд: сводка каталога (20 активных, 11 категорий, 20 без
+    изображений, 1 без цены, 16 в наличии) совпадает с ответом API;
+    у контент-менеджера нет заявок и есть «Разделы сайта».
+  Аудит: 374 записи, фильтры проверены на живом backend —
+    entity=request + action=request.status_updated -> 5 записей,
+    actor=import -> 1, период 17.09 -> 65, обратный период -> запрос
+    не уходит. Карточка записи импорта показывает статус, имя файла,
+    UUID задачи, счётчики и контрольную сумму.
+  Заявки, товары, категории, характеристики, склад, CMS,
+    импорт/экспорт, пользователи открываются без ошибок консоли.
+  Роли: MANAGER (/audit, /users, /content), CONTENT_MANAGER
+    (/requests, /audit, /users) — «Нет доступа»; VIEWER на
+    /categories, /attributes, /stock, /products — только чтение.
+  Ширины 1440 / 1024 / 768 / 390 / 375 / 360: scrollWidth равен
+    ширине окна на всех проверенных экранах, таблицы переходят в
+    карточки, диалоги и боковые панели помещаются. Консоль пуста
+    на каждом прогоне.
+  Данные QA не менялись: в браузере выполнялось только чтение.
+    Остатки 8H в oinau_qa8 сохранены как были.
+
+11.10. Известные ограничения (не дефекты)
+  * Поиска по журналу нет — его нет в backend.
+  * Автора импорта журнал показывает, а история импортов по-прежнему
+    нет (ограничение 8H).
+  * Счётчики «без изображений» и «без цены» не кликабельны: таких
+    фильтров у списка товаров нет.
+  * Подписи действий — копия констант backend; при добавлении нового
+    действия оно покажется кодом, пока подпись не добавят.
+  * hideOnMobile в DataTable срабатывает с 720px, где таблица уже
+    заменена карточками: для экранов с renderMobile флаг ничего не
+    делает. Общий компонент не трогали — это касается всех разделов.
+  * G10 (content.read) по-прежнему открыт — решение владельца.
+
+11.11. Статус
+  8I завершён. Этап 8 (Admin Frontend) закрыт полностью:
+  заглушек не осталось, все десять разделов работают.
+  ЭТАП 9 НЕ НАЧИНАЛСЯ.

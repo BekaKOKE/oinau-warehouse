@@ -1,0 +1,31 @@
+.nav {
+  font-size: 12.5px;
+  color: var(--ink-55);
+}
+
+.list {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.link {
+  color: var(--ink-55);
+}
+
+.link:hover {
+  color: var(--primary);
+}
+
+.current {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.separator {
+  color: var(--ink-45);
+}

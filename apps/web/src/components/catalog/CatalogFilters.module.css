@@ -1,0 +1,135 @@
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: 52px;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.reset {
+  font-size: 13px;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.group:last-child {
+  border-bottom: 0;
+}
+
+.fieldset {
+  margin: 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  min-inline-size: 0;
+}
+
+.groupTitle {
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-55);
+}
+
+/* legend в fieldset не участвует в gap — отступ задаём явно. */
+.fieldset .groupTitle {
+  margin-bottom: 12px;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.priceRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.priceInput {
+  min-height: 42px;
+  padding: 8px 10px;
+  font-size: 14px;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.priceInput::-webkit-outer-spin-button,
+.priceInput::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.apply {
+  margin-top: 4px;
+}
+
+.mobileToggle {
+  display: none;
+}
+
+@media (max-width: 960px) {
+  .categories {
+    padding: 12px 0 12px 12px;
+  }
+
+  .categories .groupTitle {
+    display: none;
+  }
+
+  .mobileToggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 46px;
+    border: 0;
+    border-top: 1px solid var(--line);
+    background: var(--surface-tint);
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .collapsible {
+    display: none;
+  }
+
+  .collapsibleOpen {
+    display: block;
+    border-top: 1px solid var(--line);
+  }
+}
+
+/* Счётчик товаров у значения характеристики. */
+.optionCount {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--ink-45);
+}

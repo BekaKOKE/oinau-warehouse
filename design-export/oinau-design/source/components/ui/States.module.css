@@ -1,0 +1,93 @@
+/* Пустые состояния, ошибки и скелетоны — общий вид на всех экранах. */
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  text-align: center;
+  padding: var(--space-8) var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.icon {
+  width: 46px;
+  height: 46px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-tint);
+  color: var(--primary);
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.errorIcon {
+  background: rgba(200, 52, 44, 0.1);
+  color: var(--danger);
+}
+
+.title {
+  font-size: var(--text-md);
+  font-weight: 800;
+}
+
+.text {
+  max-width: 44ch;
+  color: var(--ink-55);
+  font-size: var(--text-base);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: var(--space-2);
+}
+
+/* ---------------------------------------------------------- скелетоны */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(16, 20, 24, 0.06) 25%,
+    rgba(16, 20, 24, 0.11) 37%,
+    rgba(16, 20, 24, 0.06) 63%
+  );
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: 0 0;
+  }
+}
+
+.cardSkeleton {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.cardSkeletonImage {
+  aspect-ratio: 4 / 3;
+}
+
+.cardSkeletonBody {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}

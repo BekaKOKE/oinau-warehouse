@@ -1,0 +1,172 @@
+.footer {
+  margin-top: var(--space-8);
+  background: var(--navy);
+  color: #fff;
+}
+
+.inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) repeat(3, minmax(0, 1fr));
+  gap: 32px;
+  padding-top: 48px;
+  padding-bottom: 44px;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.brandLink {
+  display: inline-block;
+  line-height: 0;
+  align-self: flex-start;
+}
+
+.brandLogo {
+  display: block;
+  width: auto;
+  height: 34px;
+}
+
+.brandText {
+  max-width: 34ch;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--on-navy-45);
+}
+
+.whatsapp {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 32px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.whatsapp:hover {
+  color: var(--primary-light);
+}
+
+.whatsappDot {
+  width: 9px;
+  height: 9px;
+  background: #1faa59;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 9px;
+  font-style: normal;
+}
+
+.columnTitle {
+  margin-bottom: 5px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--on-navy-45);
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  font-size: 14px;
+  color: #fff;
+}
+
+.link:hover {
+  color: var(--primary-light);
+}
+
+.linkAccent {
+  color: var(--primary-light);
+  font-weight: 600;
+}
+
+.mainPhone {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.mainPhone:hover {
+  color: var(--primary-light);
+}
+
+.contact {
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+}
+
+.contact:hover {
+  color: var(--primary-light);
+}
+
+.contactValue {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.contactLabel,
+.value {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--on-navy-45);
+}
+
+.socials {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
+.quick {
+  margin-top: 8px;
+}
+
+.bottom {
+  border-top: 1px solid var(--on-navy-line);
+}
+
+.bottomInner {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 24px;
+  padding-top: 16px;
+  padding-bottom: 18px;
+  font-size: 12px;
+  color: var(--on-navy-45);
+}
+
+.requisites {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
+@media (max-width: 1040px) {
+  .inner {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .inner {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    padding-top: 36px;
+    padding-bottom: 32px;
+  }
+}

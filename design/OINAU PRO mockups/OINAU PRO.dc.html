@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#EEF1F7;font-family:'Golos Text',system-ui,sans-serif;color:#10162B;-webkit-font-smoothing:antialiased}
+a{color:#3D63CE;text-decoration:none}a:hover{color:#2A4AA8}
+*{box-sizing:border-box}
+input,button,select,textarea{font-family:inherit}
+</style>
+</helmet>
+
+<div style="position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:16px;padding:10px 20px;background:#10162B;color:#fff">
+  <span style="font:700 11px/1 'Golos Text',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#8FA3D8">Макет OINAU PRO</span>
+  <div style="display:flex;gap:6px">
+    <button onClick="{{ showHome }}" style="{{ tabHome }}">Главная</button>
+    <button onClick="{{ showCat }}" style="{{ tabCat }}">Каталог категории</button>
+    <button onClick="{{ showMob }}" style="{{ tabMob }}">Мобильный</button>
+  </div>
+  <span style="margin-left:auto;font:400 12px/1 'Golos Text',sans-serif;color:#8FA3D8">Белый + синий · углы 90° · быстрый заказ</span>
+</div>
+
+<sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+<div style="background:#F6F8FC;padding:0 0 0">
+
+  <div style="background:#fff;border-bottom:1px solid #DDE3F0">
+    <div style="max-width:1280px;margin:0 auto;padding:18px 28px;display:flex;flex-wrap:wrap;align-items:center;gap:16px 28px">
+      <img src="uploads/logo-1790063181933-k4dm.png" alt="OINAU PRO" style="height:38px;width:auto;display:block">
+      <div style="flex:none;width:1px;height:38px;background:#DDE3F0"></div>
+      <div style="flex:none;font:500 13px/1.35 'Golos Text',sans-serif;color:#5A6485;max-width:210px">Комплектующие<br>для детских площадок</div>
+      <div style="flex:1;min-width:220px;display:flex;align-items:stretch;max-width:520px;border:2px solid #10162B">
+        <input placeholder="Поиск по названию или артикулу" style="flex:1;border:0;outline:none;padding:11px 14px;font-size:14px;background:#fff">
+        <button style="border:0;background:#10162B;color:#fff;padding:0 20px;font:600 13px 'Golos Text',sans-serif;cursor:pointer">Найти</button>
+      </div>
+      <div style="flex:none;display:flex;flex-direction:column;gap:2px">
+        <a href="tel:+78005550499" style="font:700 17px/1 'Golos Text',sans-serif;color:#10162B;white-space:nowrap">8 (800) 555 04 99</a>
+        <span style="font:400 12px/1 'Golos Text',sans-serif;color:#5A6485">Пн–Пт 9:00–18:00 · отдел оптовых продаж</span>
+      </div>
+      <button onClick="{{ openModal }}" style="flex:none;background:#3D63CE;color:#fff;border:0;padding:13px 22px;font:700 14px/1 'Golos Text',sans-serif;cursor:pointer;display:flex;align-items:center;gap:9px;white-space:nowrap" style-hover="background:#2A4AA8">
+        <span style="display:block;width:9px;height:9px;background:#fff"></span>Быстрый заказ
+      </button>
+      <button style="flex:none;background:#fff;border:2px solid #DDE3F0;padding:11px 16px;font:600 14px/1 'Golos Text',sans-serif;cursor:pointer;position:relative;color:#10162B" style-hover="border-color:#3D63CE">
+        Корзина
+        <span style="position:absolute;top:-9px;right:-9px;min-width:20px;height:20px;background:#3D63CE;color:#fff;font:700 11px/20px 'Golos Text',sans-serif;text-align:center;padding:0 5px">{{ cart }}</span>
+      </button>
+    </div>
+    <div style="border-top:1px solid #DDE3F0">
+      <div style="max-width:1280px;margin:0 auto;padding:0 28px;display:flex;flex-wrap:wrap;gap:2px">
+        <a href="#" onClick="{{ showCat }}" style="padding:14px 18px;font:600 14px/1 'Golos Text',sans-serif;color:#fff;background:#10162B">Каталог</a>
+        <a href="#" style="padding:14px 18px;font:500 14px/1 'Golos Text',sans-serif;color:#10162B" style-hover="background:#F1F5FD">Прайс-лист</a>
+        <a href="#" style="padding:14px 18px;font:500 14px/1 'Golos Text',sans-serif;color:#10162B" style-hover="background:#F1F5FD">Оптовым клиентам</a>
+        <a href="#" style="padding:14px 18px;font:500 14px/1 'Golos Text',sans-serif;color:#10162B" style-hover="background:#F1F5FD">Доставка и оплата</a>
+        <a href="#" style="padding:14px 18px;font:500 14px/1 'Golos Text',sans-serif;color:#10162B" style-hover="background:#F1F5FD">О производстве</a>
+        <a href="#" style="padding:14px 18px;font:500 14px/1 'Golos Text',sans-serif;color:#10162B" style-hover="background:#F1F5FD">Контакты</a>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width:1280px;margin:0 auto;padding:28px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px">
+      <div style="background:#3D63CE;color:#fff;padding:44px 44px 38px;display:flex;flex-direction:column;justify-content:space-between;min-height:320px">
+        <div>
+          <div style="font:700 11px/1 'Golos Text',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#C3D2F5">Производство и поставка</div>
+          <h1 style="margin:16px 0 0;font:800 44px/1.06 'Golos Text',sans-serif;letter-spacing:-.02em;max-width:15ch;text-wrap:balance">Комплектующие для детских площадок</h1>
+          <p style="margin:16px 0 0;font:400 16px/1.5 'Golos Text',sans-serif;color:#DCE5FA;max-width:46ch">75 позиций на складе: сиденья, подвесы, гильзы, такелаж и канаты. Отгрузка со склада в день заказа.</p>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:28px;flex-wrap:wrap">
+          <button onClick="{{ openModal }}" style="background:#fff;color:#10162B;border:0;padding:15px 26px;font:700 15px/1 'Golos Text',sans-serif;cursor:pointer">Быстрый заказ за 1 минуту</button>
+          <button onClick="{{ showCat }}" style="background:transparent;color:#fff;border:2px solid #fff;padding:13px 24px;font:600 15px/1 'Golos Text',sans-serif;cursor:pointer">Открыть каталог</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-rows:repeat(3,1fr);gap:20px">
+        <div style="background:#fff;border:1px solid #DDE3F0;padding:22px 24px;display:flex;align-items:center;gap:18px">
+          <div style="width:44px;height:44px;background:#3D63CE;flex:none"></div>
+          <div><div style="font:700 16px/1.2 'Golos Text',sans-serif">Отгрузка за 1 день</div><div style="font:400 13px/1.4 'Golos Text',sans-serif;color:#5A6485;margin-top:4px">Склад в Москве, самовывоз и ТК</div></div>
+        </div>
+        <div style="background:#fff;border:1px solid #DDE3F0;padding:22px 24px;display:flex;align-items:center;gap:18px">
+          <div style="width:44px;height:44px;background:#10162B;flex:none"></div>
+          <div><div style="font:700 16px/1.2 'Golos Text',sans-serif">Оптовые цены от 50 шт</div><div style="font:400 13px/1.4 'Golos Text',sans-serif;color:#5A6485;margin-top:4px">Отсрочка платежа для подрядчиков</div></div>
+        </div>
+        <div style="background:#fff;border:1px solid #DDE3F0;padding:22px 24px;display:flex;align-items:center;gap:18px">
+          <div style="width:44px;height:44px;background:#C3D2F5;flex:none"></div>
+          <div><div style="font:700 16px/1.2 'Golos Text',sans-serif">Соответствие ГОСТ Р 52169</div><div style="font:400 13px/1.4 'Golos Text',sans-serif;color:#5A6485;margin-top:4px">Паспорта и сертификаты по запросу</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;background:#10162B;color:#fff;padding:20px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+      <div style="font:700 15px/1.3 'Golos Text',sans-serif">Знаете артикулы? Вставьте список — соберём заказ сами</div>
+      <input placeholder="OIN-1042 × 20, OIN-2210 × 4 …" style="flex:1;min-width:260px;border:0;outline:none;padding:13px 16px;font-size:14px;background:#fff;color:#10162B">
+      <button onClick="{{ openArt }}" style="background:#3D63CE;color:#fff;border:0;padding:14px 24px;font:700 14px/1 'Golos Text',sans-serif;cursor:pointer">Оформить</button>
+    </div>
+
+    <div style="display:flex;align-items:baseline;gap:16px;margin:44px 0 18px">
+      <h2 style="margin:0;font:800 28px/1.1 'Golos Text',sans-serif;letter-spacing:-.01em">Каталог</h2>
+      <span style="font:400 14px 'Golos Text',sans-serif;color:#5A6485">7 групп · 75 позиций</span>
+      <a href="#" onClick="{{ showCat }}" style="margin-left:auto;font:600 14px 'Golos Text',sans-serif">Весь каталог →</a>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:20px">
+      <sc-for list="{{ categories }}" as="c" hint-placeholder-count="7">
+        <a href="#" onClick="{{ showCat }}" style="background:#fff;border:1px solid #DDE3F0;display:flex;flex-direction:column;color:#10162B" style-hover="border-color:#3D63CE">
+          <div style="aspect-ratio:4/3;background:#F1F5FD;border-bottom:1px solid #DDE3F0;display:flex;align-items:center;justify-content:center">
+            <span style="font:500 11px/1 'Golos Text',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#9AA6C4">фото товара</span>
+          </div>
+          <div style="padding:16px 18px 18px">
+            <div style="font:600 16px/1.3 'Golos Text',sans-serif">{{ c.name }}</div>
+            <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between">
+              <span style="font:400 13px 'Golos Text',sans-serif;color:#5A6485">{{ c.count }}</span>
+              <span style="font:600 13px 'Golos Text',sans-serif;color:#3D63CE">от {{ c.from }} ₽</span>
+            </div>
+          </div>
+        </a>
+      </sc-for>
+    </div>
+
+    <div style="display:flex;align-items:baseline;gap:16px;margin:48px 0 18px">
+      <h2 style="margin:0;font:800 28px/1.1 'Golos Text',sans-serif;letter-spacing:-.01em">Часто заказывают</h2>
+      <a href="#" onClick="{{ showCat }}" style="margin-left:auto;font:600 14px 'Golos Text',sans-serif">Смотреть все →</a>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:20px">
+      <sc-for list="{{ hits }}" as="p" hint-placeholder-count="4">
+        <div style="background:#fff;border:1px solid #DDE3F0;display:flex;flex-direction:column">
+          <div style="aspect-ratio:1/1;background:#F1F5FD;border-bottom:1px solid #DDE3F0;display:flex;align-items:center;justify-content:center;position:relative">
+            <span style="position:absolute;top:0;left:0;background:#1E9E6A;color:#fff;font:600 11px/1 'Golos Text',sans-serif;padding:6px 9px">{{ p.stock }}</span>
+            <span style="font:500 11px/1 'Golos Text',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#9AA6C4">фото товара</span>
+          </div>
+          <div style="padding:16px 18px 18px;display:flex;flex-direction:column;gap:10px;flex:1">
+            <div style="font:400 12px 'Golos Text',sans-serif;color:#9AA6C4">арт. {{ p.art }}</div>
+            <div style="font:600 15px/1.35 'Golos Text',sans-serif;flex:1">{{ p.name }}</div>
+            <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px">
+              <span style="font:800 22px/1 'Golos Text',sans-serif;white-space:nowrap">{{ p.price }} ₽</span>
+              <span style="font:400 13px 'Golos Text',sans-serif;color:#5A6485;white-space:nowrap">/ {{ p.unit }}</span>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button onClick="{{ addToCart }}" style="flex:1;background:#3D63CE;color:#fff;border:0;padding:12px;font:600 14px/1 'Golos Text',sans-serif;cursor:pointer" style-hover="background:#2A4AA8">В корзину</button>
+              <button onClick="{{ openModal }}" title="Быстрый заказ" style="background:#fff;border:2px solid #DDE3F0;color:#10162B;padding:10px 14px;font:700 14px/1 'Golos Text',sans-serif;cursor:pointer" style-hover="border-color:#3D63CE">1&nbsp;клик</button>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="margin-top:48px;background:#fff;border:1px solid #DDE3F0;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+      <div style="padding:28px 26px;border-right:1px solid #DDE3F0"><div style="font:800 34px/1 'Golos Text',sans-serif;color:#3D63CE">12 лет</div><div style="margin-top:8px;font:400 14px/1.45 'Golos Text',sans-serif;color:#5A6485">собственное производство пластика и металла</div></div>
+      <div style="padding:28px 26px;border-right:1px solid #DDE3F0"><div style="font:800 34px/1 'Golos Text',sans-serif;color:#3D63CE">75</div><div style="margin-top:8px;font:400 14px/1.45 'Golos Text',sans-serif;color:#5A6485">позиций в постоянном наличии на складе</div></div>
+      <div style="padding:28px 26px;border-right:1px solid #DDE3F0"><div style="font:800 34px/1 'Golos Text',sans-serif;color:#3D63CE">300+</div><div style="margin-top:8px;font:400 14px/1.45 'Golos Text',sans-serif;color:#5A6485">производителей МАФ и подрядчиков работают с нами</div></div>
+      <div style="padding:28px 26px"><div style="font:800 34px/1 'Golos Text',sans-serif;color:#3D63CE">1 день</div><div style="margin-top:8px;font:400 14px/1.45 'Golos Text',sans-serif;color:#5A6485">средний срок отгрузки складского заказа</div></div>
+    </div>
+  </div>
+
+  <div style="background:#10162B;color:#fff;margin-top:48px">
+    <div style="max-width:1280px;margin:0 auto;padding:44px 28px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:32px">
+      <div>
+        <img src="uploads/logo-1790063181933-k4dm.png" alt="OINAU PRO" style="height:34px;width:auto;display:block;filter:brightness(1.6)">
+        <p style="margin:16px 0 0;font:400 13px/1.6 'Golos Text',sans-serif;color:#8FA3D8;max-width:30ch">Производство комплектующих для детских и спортивных площадок.</p>
+      </div>
+      <div><div style="font:700 13px/1 'Golos Text',sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#8FA3D8">Каталог</div><div style="margin-top:14px;display:flex;flex-direction:column;gap:9px;font:400 14px 'Golos Text',sans-serif"><a href="#" style="color:#fff">Сиденье для качелей</a><a href="#" style="color:#fff">Гильзы и втулки</a><a href="#" style="color:#fff">Такелажный крепёж</a><a href="#" style="color:#fff">Канаты</a></div></div>
+      <div><div style="font:700 13px/1 'Golos Text',sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#8FA3D8">Клиентам</div><div style="margin-top:14px;display:flex;flex-direction:column;gap:9px;font:400 14px 'Golos Text',sans-serif"><a href="#" style="color:#fff">Прайс-лист</a><a href="#" style="color:#fff">Доставка и оплата</a><a href="#" style="color:#fff">Сертификаты</a><a href="#" style="color:#fff">Реквизиты</a></div></div>
+      <div><div style="font:700 13px/1 'Golos Text',sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#8FA3D8">Контакты</div><div style="margin-top:14px;font:700 20px/1.2 'Golos Text',sans-serif">8 (800) 555 04 99</div><div style="margin-top:8px;font:400 14px/1.6 'Golos Text',sans-serif;color:#8FA3D8">sales@oinau.pro<br>Москва, ул. Промышленная, 14</div><button onClick="{{ openModal }}" style="margin-top:16px;background:#3D63CE;color:#fff;border:0;padding:13px 20px;font:700 14px/1 'Golos Text',sans-serif;cursor:pointer">Быстрый заказ</button></div>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isCat }}" hint-placeholder-val="{{ false }}">
+<div style="background:#F6F8FC;min-height:100vh">
+  <div style="background:#fff;border-bottom:1px solid #DDE3F0">
+    <div style="max-width:1280px;margin:0 auto;padding:18px 28px;display:flex;flex-wrap:wrap;align-items:center;gap:16px 28px">
+      <a href="#" onClick="{{ showHome }}"><img src="uploads/logo-1790063181933-k4dm.png" alt="OINAU PRO" style="height:34px;width:auto;display:block"></a>
+      <div style="flex:1;min-width:220px;display:flex;align-items:stretch;max-width:520px;border:2px solid #10162B">
+        <input placeholder="Поиск по названию или артикулу" style="flex:1;min-width:0;border:0;outline:none;padding:10px 14px;font-size:14px">
+        <button style="border:0;background:#10162B;color:#fff;padding:0 20px;font:600 13px 'Golos Text',sans-serif;cursor:pointer">Найти</button>
+      </div>
+      <a href="tel:+78005550499" style="flex:none;font:700 16px/1 'Golos Text',sans-serif;color:#10162B;white-space:nowrap">8 (800) 555 04 99</a>
+      <button onClick="{{ openModal }}" style="flex:none;background:#3D63CE;color:#fff;border:0;padding:12px 20px;font:700 14px/1 'Golos Text',sans-serif;cursor:pointer;white-space:nowrap">Быстрый заказ</button>
+      <button style="flex:none;background:#fff;border:2px solid #DDE3F0;padding:10px 16px;font:600 14px/1 'Golos Text',sans-serif;cursor:pointer;position:relative;color:#10162B">Корзина<span style="position:absolute;top:-9px;right:-9px;min-width:20px;height:20px;background:#3D63CE;color:#fff;font:700 11px/20px 'Golos Text',sans-serif;text-align:center;padding:0 5px">{{ cart }}</span></button>
+    </div>
+  </div>
+
+  <div style="max-width:1280px;margin:0 auto;padding:18px 28px 48px">
+    <div style="display:flex;gap:8px;font:400 13px 'Golos Text',sans-serif;color:#5A6485;padding:6px 0 18px">
+      <a href="#" onClick="{{ showHome }}">Главная</a><span>/</span><a href="#">Каталог</a><span>/</span><span style="color:#10162B">Комплектующие для качелей</span>
+    </div>
+    <h1 style="margin:0;font:800 34px/1.1 'Golos Text',sans-serif;letter-spacing:-.015em">Комплектующие для качелей</h1>
+    <p style="margin:10px 0 0;font:400 15px/1.55 'Golos Text',sans-serif;color:#5A6485;max-width:70ch">12 позиций. Подвесы, цепи, карабины и сиденья для качелей всех типовых сечений. Всё на складе, отгрузка в день оплаты.</p>
+
+    <div style="display:flex;flex-wrap:wrap;gap:24px;margin-top:26px;align-items:flex-start">
+      <div style="flex:1 1 240px;max-width:280px;min-width:240px;background:#fff;border:1px solid #DDE3F0">
+        <div style="padding:16px 18px;border-bottom:1px solid #DDE3F0;font:700 14px/1 'Golos Text',sans-serif;letter-spacing:.06em;text-transform:uppercase">Подбор</div>
+        <div style="padding:18px">
+          <div style="font:600 13px/1 'Golos Text',sans-serif;color:#5A6485;text-transform:uppercase;letter-spacing:.08em">Категория</div>
+          <div style="margin-top:12px;display:flex;flex-direction:column;gap:2px">
+            <sc-for list="{{ categories }}" as="c" hint-placeholder-count="7">
+              <a href="#" style="{{ c.linkStyle }}">{{ c.name }} <span style="color:#9AA6C4">· {{ c.n }}</span></a>
+            </sc-for>
+          </div>
+          <div style="height:1px;background:#DDE3F0;margin:20px 0"></div>
+          <div style="font:600 13px/1 'Golos Text',sans-serif;color:#5A6485;text-transform:uppercase;letter-spacing:.08em">Цена, ₽</div>
+          <div style="margin-top:12px;display:flex;gap:8px">
+            <input value="120" style="width:100%;border:2px solid #DDE3F0;padding:9px 10px;font-size:14px;outline:none">
+            <input value="4 900" style="width:100%;border:2px solid #DDE3F0;padding:9px 10px;font-size:14px;outline:none">
+          </div>
+          <div style="height:1px;background:#DDE3F0;margin:20px 0"></div>
+          <div style="font:600 13px/1 'Golos Text',sans-serif;color:#5A6485;text-transform:uppercase;letter-spacing:.08em">Материал</div>
+          <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px;font:400 14px 'Golos Text',sans-serif">
+            <label style="display:flex;gap:9px;align-items:center;cursor:pointer"><input type="checkbox" style="width:16px;height:16px;accent-color:#3D63CE">Нержавеющая сталь</label>
+            <label style="display:flex;gap:9px;align-items:center;cursor:pointer"><input type="checkbox" style="width:16px;height:16px;accent-color:#3D63CE">Оцинкованная сталь</label>
+            <label style="display:flex;gap:9px;align-items:center;cursor:pointer"><input type="checkbox" style="width:16px;height:16px;accent-color:#3D63CE">Резина / ПВХ</label>
+            <label style="display:flex;gap:9px;align-items:center;cursor:pointer"><input type="checkbox" style="width:16px;height:16px;accent-color:#3D63CE">Полиамид</label>
+          </div>
+          <div style="height:1px;background:#DDE3F0;margin:20px 0"></div>
+          <label style="display:flex;gap:9px;align-items:center;cursor:pointer;font:500 14px 'Golos Text',sans-serif"><input type="checkbox" checked="checked" style="width:16px;height:16px;accent-color:#3D63CE">Только в наличии</label>
+          <button style="margin-top:20px;width:100%;background:#10162B;color:#fff;border:0;padding:13px;font:600 14px/1 'Golos Text',sans-serif;cursor:pointer">Показать</button>
+        </div>
+      </div>
+
+      <div style="flex:3 1 420px;min-width:0">
+        <div style="background:#fff;border:1px solid #DDE3F0;padding:12px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+          <span style="font:400 13px 'Golos Text',sans-serif;color:#5A6485">Сортировка</span>
+          <div style="display:flex;gap:2px">
+            <button style="background:#10162B;color:#fff;border:0;padding:9px 14px;font:600 13px/1 'Golos Text',sans-serif;cursor:pointer">Популярные</button>
+            <button style="background:#F1F5FD;color:#10162B;border:0;padding:9px 14px;font:500 13px/1 'Golos Text',sans-serif;cursor:pointer">Дешевле</button>
+            <button style="background:#F1F5FD;color:#10162B;border:0;padding:9px 14px;font:500 13px/1 'Golos Text',sans-serif;cursor:pointer">Дороже</button>
+          </div>
+          <span style="margin-left:auto;font:400 13px 'Golos Text',sans-serif;color:#5A6485">Показано 6 из 12</span>
+          <button onClick="{{ openKp }}" style="background:#fff;border:2px solid #3D63CE;color:#3D63CE;padding:8px 14px;font:600 13px/1 'Golos Text',sans-serif;cursor:pointer">Запросить КП на категорию</button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-top:16px">
+          <sc-for list="{{ products }}" as="p" hint-placeholder-count="6">
+            <div style="background:#fff;border:1px solid #DDE3F0;display:flex;flex-direction:column" style-hover="border-color:#3D63CE">
+              <div style="aspect-ratio:1/1;background:#F1F5FD;border-bottom:1px solid #DDE3F0;display:flex;align-items:center;justify-content:center;position:relative">
+                <span style="position:absolute;top:0;left:0;background:#1E9E6A;color:#fff;font:600 11px/1 'Golos Text',sans-serif;padding:6px 9px">{{ p.stock }}</span>
+                <span style="font:500 11px/1 'Golos Text',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#9AA6C4">фото товара</span>
+              </div>
+              <div style="padding:14px 16px 16px;display:flex;flex-direction:column;gap:9px;flex:1">
+                <div style="font:400 12px 'Golos Text',sans-serif;color:#9AA6C4">арт. {{ p.art }}</div>
+                <div style="font:600 15px/1.35 'Golos Text',sans-serif;flex:1">{{ p.name }}</div>
+                <div style="font:400 12px/1.4 'Golos Text',sans-serif;color:#5A6485">{{ p.spec }}</div>
+                <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px">
+                  <span style="font:800 21px/1 'Golos Text',sans-serif;white-space:nowrap">{{ p.price }} ₽</span>
+                  <span style="font:400 12px 'Golos Text',sans-serif;color:#5A6485;white-space:nowrap">/ {{ p.unit }}</span>
+                </div>
+                <div style="font:500 12px 'Golos Text',sans-serif;color:#3D63CE;white-space:nowrap">от 50 шт — {{ p.wholesale }} ₽</div>
+                <div style="display:flex;gap:8px">
+                  <button onClick="{{ addToCart }}" style="flex:1;background:#3D63CE;color:#fff;border:0;padding:11px;font:600 14px/1 'Golos Text',sans-serif;cursor:pointer" style-hover="background:#2A4AA8">В корзину</button>
+                  <button onClick="{{ openModal }}" style="background:#fff;border:2px solid #DDE3F0;color:#10162B;padding:9px 12px;font:700 13px/1 'Golos Text',sans-serif;cursor:pointer" style-hover="border-color:#3D63CE">1&nbsp;клик</button>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display:flex;gap:2px;margin-top:20px">
+          <button style="background:#10162B;color:#fff;border:0;width:42px;height:42px;font:600 14px 'Golos Text',sans-serif;cursor:pointer">1</button>
+          <button style="background:#fff;border:1px solid #DDE3F0;width:42px;height:42px;font:500 14px 'Golos Text',sans-serif;cursor:pointer">2</button>
+          <button style="background:#fff;border:1px solid #DDE3F0;padding:0 18px;height:42px;font:500 14px 'Golos Text',sans-serif;cursor:pointer">Показать ещё</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isMob }}" hint-placeholder-val="{{ false }}">
+<div style="background:#EEF1F7;padding:36px 20px;display:flex;gap:28px;justify-content:center;flex-wrap:wrap">
+  <div style="width:390px;background:#fff;border:1px solid #DDE3F0;overflow:hidden">
+    <div style="background:#10162B;color:#fff;padding:8px 18px;display:flex;justify-content:space-between;font:600 12px 'Golos Text',sans-serif;white-space:nowrap"><span>9:41</span><span>OINAU PRO</span></div>
+    <div style="padding:14px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #DDE3F0">
+      <div style="display:flex;flex-direction:column;gap:4px;cursor:pointer"><span style="display:block;width:22px;height:2px;background:#10162B"></span><span style="display:block;width:22px;height:2px;background:#10162B"></span><span style="display:block;width:22px;height:2px;background:#10162B"></span></div>
+      <img src="uploads/logo-1790063181933-k4dm.png" alt="OINAU PRO" style="height:24px;width:auto">
+      <span style="margin-left:auto;font:600 13px 'Golos Text',sans-serif;color:#3D63CE">Корзина {{ cart }}</span>
+    </div>
+    <div style="padding:12px 16px;border-bottom:1px solid #DDE3F0;display:flex;border:0">
+      <input placeholder="Поиск по артикулу" style="flex:1;border:2px solid #10162B;border-right:0;padding:10px 12px;font-size:14px;outline:none">
+      <button style="border:0;background:#10162B;color:#fff;padding:0 16px;font:600 13px 'Golos Text',sans-serif">OK</button>
+    </div>
+    <div style="background:#3D63CE;color:#fff;padding:24px 18px">
+      <div style="font:700 10px/1 'Golos Text',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#C3D2F5">Со склада в Москве</div>
+      <div style="margin-top:10px;font:800 26px/1.12 'Golos Text',sans-serif">Комплектующие для детских площадок</div>
+      <button onClick="{{ openModal }}" style="margin-top:16px;width:100%;background:#fff;color:#10162B;border:0;padding:15px;font:700 15px/1 'Golos Text',sans-serif;cursor:pointer">Быстрый заказ</button>
+    </div>
+    <div style="padding:18px 16px">
+      <div style="font:800 18px/1 'Golos Text',sans-serif">Каталог</div>
+      <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <sc-for list="{{ categories }}" as="c" hint-placeholder-count="7">
+          <a href="#" style="border:1px solid #DDE3F0;color:#10162B;display:flex;flex-direction:column">
+            <div style="aspect-ratio:4/3;background:#F1F5FD;display:flex;align-items:center;justify-content:center;font:500 10px 'Golos Text',sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#9AA6C4">фото</div>
+            <div style="padding:10px 12px"><div style="font:600 13px/1.25 'Golos Text',sans-serif">{{ c.name }}</div><div style="margin-top:4px;font:400 11px 'Golos Text',sans-serif;color:#5A6485">{{ c.count }}</div></div>
+          </a>
+        </sc-for>
+      </div>
+    </div>
+    <div style="position:sticky;bottom:0;background:#fff;border-top:1px solid #DDE3F0;display:grid;grid-template-columns:repeat(4,1fr);gap:1px">
+      <a href="#" style="padding:12px 0;text-align:center;font:600 11px 'Golos Text',sans-serif;color:#3D63CE">Главная</a>
+      <a href="#" style="padding:12px 0;text-align:center;font:500 11px 'Golos Text',sans-serif;color:#5A6485">Каталог</a>
+      <a href="#" style="padding:12px 0;text-align:center;font:500 11px 'Golos Text',sans-serif;color:#5A6485">Корзина</a>
+      <a href="#" onClick="{{ openModal }}" style="padding:12px 0;text-align:center;font:600 11px 'Golos Text',sans-serif;color:#10162B;background:#F1F5FD">Заказ</a>
+    </div>
+  </div>
+
+  <div style="width:390px;background:#fff;border:1px solid #DDE3F0">
+    <div style="background:#10162B;color:#fff;padding:8px 18px;display:flex;justify-content:space-between;font:600 12px 'Golos Text',sans-serif"><span>9:41</span><span>Категория</span></div>
+    <div style="padding:14px 16px;border-bottom:1px solid #DDE3F0">
+      <div style="font:400 12px 'Golos Text',sans-serif;color:#5A6485">Каталог / Качели</div>
+      <div style="margin-top:6px;font:800 20px/1.15 'Golos Text',sans-serif">Комплектующие для качелей</div>
+    </div>
+    <div style="display:flex;gap:8px;padding:12px 16px;border-bottom:1px solid #DDE3F0">
+      <button style="flex:1;background:#F1F5FD;border:0;padding:11px;font:600 13px 'Golos Text',sans-serif;color:#10162B">Фильтры</button>
+      <button style="flex:1;background:#F1F5FD;border:0;padding:11px;font:600 13px 'Golos Text',sans-serif;color:#10162B">Сортировка</button>
+    </div>
+    <div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px">
+      <sc-for list="{{ mobProducts }}" as="p" hint-placeholder-count="4">
+        <div style="border:1px solid #DDE3F0;display:flex;gap:12px;padding:12px">
+          <div style="width:88px;height:88px;flex:none;background:#F1F5FD;display:flex;align-items:center;justify-content:center;font:500 10px 'Golos Text',sans-serif;color:#9AA6C4;text-transform:uppercase;letter-spacing:.1em">фото</div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+            <div style="font:600 14px/1.3 'Golos Text',sans-serif">{{ p.name }}</div>
+            <div style="font:400 11px 'Golos Text',sans-serif;color:#9AA6C4">арт. {{ p.art }}</div>
+            <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 6px"><span style="font:800 18px/1 'Golos Text',sans-serif;white-space:nowrap">{{ p.price }} ₽</span><span style="font:400 11px 'Golos Text',sans-serif;color:#5A6485;white-space:nowrap">/ {{ p.unit }}</span></div>
+            <div style="display:flex;gap:6px;margin-top:2px">
+              <button onClick="{{ addToCart }}" style="flex:1;background:#3D63CE;color:#fff;border:0;padding:9px;font:600 12px 'Golos Text',sans-serif;cursor:pointer">В корзину</button>
+              <button onClick="{{ openModal }}" style="border:2px solid #DDE3F0;background:#fff;color:#10162B;padding:7px 10px;font:700 12px 'Golos Text',sans-serif;cursor:pointer">1 клик</button>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="position:sticky;bottom:0;padding:12px 16px;background:#fff;border-top:1px solid #DDE3F0">
+      <button onClick="{{ openModal }}" style="width:100%;background:#3D63CE;color:#fff;border:0;padding:15px;font:700 15px/1 'Golos Text',sans-serif;cursor:pointer">Быстрый заказ</button>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ modalOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:fixed;inset:0;z-index:100;background:rgba(16,22,43,.55);display:flex;align-items:center;justify-content:center;padding:24px" onClick="{{ closeModal }}">
+  <div onClick="{{ stop }}" style="width:100%;max-width:620px;background:#fff;max-height:88vh;overflow:auto">
+    <div style="background:#10162B;color:#fff;padding:20px 26px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font:800 21px/1.1 'Golos Text',sans-serif">Быстрый заказ</div>
+        <div style="margin-top:5px;font:400 13px 'Golos Text',sans-serif;color:#8FA3D8">Менеджер перезвонит в течение 15 минут</div>
+      </div>
+      <button onClick="{{ closeModal }}" style="background:transparent;border:2px solid #3B456B;color:#fff;width:36px;height:36px;font:600 16px 'Golos Text',sans-serif;cursor:pointer">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#DDE3F0;border-bottom:1px solid #DDE3F0">
+      <button onClick="{{ setTab1 }}" style="{{ tab1 }}">По телефону</button>
+      <button onClick="{{ setTab2 }}" style="{{ tab2 }}">По артикулам</button>
+      <button onClick="{{ setTab3 }}" style="{{ tab3 }}">Запрос КП</button>
+    </div>
+
+    <sc-if value="{{ sent }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:48px 26px;text-align:center">
+        <div style="width:56px;height:56px;background:#1E9E6A;margin:0 auto;display:flex;align-items:center;justify-content:center;color:#fff;font:700 26px 'Golos Text',sans-serif">✓</div>
+        <div style="margin-top:18px;font:800 20px 'Golos Text',sans-serif">Заявка отправлена</div>
+        <div style="margin-top:8px;font:400 14px/1.5 'Golos Text',sans-serif;color:#5A6485">Номер заявки OP-2419. Менеджер свяжется с вами в рабочее время.</div>
+        <button onClick="{{ closeModal }}" style="margin-top:22px;background:#10162B;color:#fff;border:0;padding:14px 28px;font:700 14px 'Golos Text',sans-serif;cursor:pointer">Закрыть</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ showForm }}" hint-placeholder-val="{{ true }}">
+    <div style="padding:26px">
+      <sc-if value="{{ isTab1 }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="background:#F1F5FD;padding:14px 16px;font:400 13px/1.5 'Golos Text',sans-serif;color:#5A6485">Оставьте телефон — подберём позиции, рассчитаем цену и доставку.</div>
+          <label style="display:flex;flex-direction:column;gap:6px;font:600 13px 'Golos Text',sans-serif">Телефон<input placeholder="+7 (___) ___-__-__" style="border:2px solid #DDE3F0;padding:13px 14px;font-size:15px;outline:none" style-focus="border-color:#3D63CE"></label>
+          <label style="display:flex;flex-direction:column;gap:6px;font:600 13px 'Golos Text',sans-serif">Имя и компания<input placeholder="Иван, ООО «Площадка»" style="border:2px solid #DDE3F0;padding:13px 14px;font-size:15px;outline:none" style-focus="border-color:#3D63CE"></label>
+          <label style="display:flex;flex-direction:column;gap:6px;font:600 13px 'Golos Text',sans-serif">Комментарий<textarea rows="3" placeholder="Что нужно и в каком количестве" style="border:2px solid #DDE3F0;padding:13px 14px;font-size:15px;outline:none;resize:vertical"></textarea></label>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isTab2 }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="background:#F1F5FD;padding:14px 16px;font:400 13px/1.5 'Golos Text',sans-serif;color:#5A6485">Вставьте список артикулов с количеством — по строке на позицию. Распознаем и пришлём счёт.</div>
+          <textarea rows="6" style="border:2px solid #DDE3F0;padding:13px 14px;font-size:15px;outline:none;resize:vertical;font-family:ui-monospace,Menlo,monospace">OIN-1042 × 20
+OIN-2210 × 4
+OIN-3305 × 120</textarea>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <input placeholder="Телефон" style="border:2px solid #DDE3F0;padding:13px 14px;font-size:15px;outline:none">
+            <input placeholder="E-mail для счёта" style="border:2px solid #DDE3F0;padding:13px 14px;font-size:15px;outline:none">
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isTab3 }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="background:#F1F5FD;padding:14px 16px;font:400 13px/1.5 'Golos Text',sans-serif;color:#5A6485">Загрузите спецификацию или ТЗ — подготовим коммерческое предложение с оптовыми ценами.</div>
+          <div style="border:2px dashed #C3D2F5;padding:28px;text-align:center;font:500 14px/1.5 'Golos Text',sans-serif;color:#5A6485;cursor:pointer">Перетащите файл сюда<br><span style="font-weight:400;font-size:13px;color:#9AA6C4">XLS, PDF, DWG до 20 МБ</span></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <input placeholder="Компания / ИНН" style="border:2px solid #DDE3F0;padding:13px 14px;font-size:15px;outline:none">
+            <input placeholder="Телефон" style="border:2px solid #DDE3F0;padding:13px 14px;font-size:15px;outline:none">
+          </div>
+          <input placeholder="E-mail" style="border:2px solid #DDE3F0;padding:13px 14px;font-size:15px;outline:none">
+        </div>
+      </sc-if>
+      <button onClick="{{ send }}" style="margin-top:20px;width:100%;background:#3D63CE;color:#fff;border:0;padding:16px;font:700 15px/1 'Golos Text',sans-serif;cursor:pointer" style-hover="background:#2A4AA8">Отправить заявку</button>
+      <div style="margin-top:12px;font:400 12px/1.5 'Golos Text',sans-serif;color:#9AA6C4;text-align:center">Нажимая кнопку, вы соглашаетесь с политикой обработки персональных данных</div>
+    </div>
+    </sc-if>
+  </div>
+</div>
+</sc-if>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1360,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  state = { screen: 'home', modal: false, tab: 1, sent: false, cart: 2 };
+
+  tabBtn(on) {
+    return 'border:0;padding:8px 14px;cursor:pointer;font:600 13px/1 \'Golos Text\',sans-serif;' +
+      (on ? 'background:#3D63CE;color:#fff' : 'background:#222A44;color:#B9C4E4');
+  }
+  modalTab(on) {
+    return 'border:0;padding:15px 10px;cursor:pointer;font:600 14px/1 \'Golos Text\',sans-serif;' +
+      (on ? 'background:#fff;color:#3D63CE;box-shadow:inset 0 -3px 0 #3D63CE' : 'background:#F6F8FC;color:#5A6485');
+  }
+
+  renderVals() {
+    const s = this.state;
+    const cats = [
+      { name: 'Сиденье для качелей', n: 11, from: 640 },
+      { name: 'Гимнастические кольца и подвесы', n: 14, from: 890 },
+      { name: 'Гильзы и втулки', n: 20, from: 120 },
+      { name: 'Комплектующие для качелей', n: 12, from: 310 },
+      { name: 'Такелажный крепёж', n: 11, from: 95 },
+      { name: 'Канаты', n: 4, from: 420 },
+      { name: 'Качели «Гнездо»', n: 3, from: 4900 }
+    ];
+    const plural = (n) => n % 10 === 1 && n % 100 !== 11 ? 'позиция' : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? 'позиции' : 'позиций');
+    const categories = cats.map((c, i) => ({
+      name: c.name, n: c.n, from: c.from, count: c.n + ' ' + plural(c.n),
+      linkStyle: 'padding:9px 10px;font:' + (i === 3 ? '600' : '400') + ' 14px/1.3 \'Golos Text\',sans-serif;' +
+        (i === 3 ? 'background:#3D63CE;color:#fff' : 'color:#10162B')
+    }));
+
+    const products = [
+      { art: 'OIN-1042', name: 'Подвес качели на подшипнике', spec: 'Нерж. сталь, под трубу Ø42 мм', price: '1 480', wholesale: '1 240', unit: 'шт', stock: 'в наличии' },
+      { art: 'OIN-1055', name: 'Цепь калиброванная оцинкованная', spec: '6 мм, DIN 766, бухта 25 м', price: '310', wholesale: '268', unit: 'м', stock: 'в наличии' },
+      { art: 'OIN-2210', name: 'Сиденье качели резиновое «Гибкое»', spec: '450 × 180 мм, армированное', price: '1 950', wholesale: '1 690', unit: 'шт', stock: 'в наличии' },
+      { art: 'OIN-2318', name: 'Карабин такелажный с муфтой', spec: 'M10, нерж. А4', price: '420', wholesale: '355', unit: 'шт', stock: 'в наличии' },
+      { art: 'OIN-3305', name: 'Гильза опорная под стойку 100 мм', spec: 'Полиамид, для бетонирования', price: '640', wholesale: '520', unit: 'шт', stock: 'в наличии' },
+      { art: 'OIN-4120', name: 'Соединитель канатный крестовой', spec: 'Под канат Ø16 мм, ПА6', price: '520', wholesale: '445', unit: 'шт', stock: 'в наличии' }
+    ];
+
+    return {
+      cart: s.cart,
+      categories, products,
+      mobProducts: products.slice(0, 4),
+      hits: [products[0], products[2], products[4], products[5]],
+      isHome: s.screen === 'home', isCat: s.screen === 'cat', isMob: s.screen === 'mob',
+      tabHome: this.tabBtn(s.screen === 'home'),
+      tabCat: this.tabBtn(s.screen === 'cat'),
+      tabMob: this.tabBtn(s.screen === 'mob'),
+      showHome: (e) => { if (e) e.preventDefault(); this.setState({ screen: 'home' }); },
+      showCat: (e) => { if (e) e.preventDefault(); this.setState({ screen: 'cat' }); },
+      showMob: (e) => { if (e) e.preventDefault(); this.setState({ screen: 'mob' }); },
+      addToCart: () => this.setState(st => ({ cart: st.cart + 1 })),
+      openModal: (e) => { if (e) e.preventDefault(); this.setState({ modal: true, sent: false, tab: 1 }); },
+      openArt: () => this.setState({ modal: true, sent: false, tab: 2 }),
+      openKp: () => this.setState({ modal: true, sent: false, tab: 3 }),
+      closeModal: () => this.setState({ modal: false }),
+      stop: (e) => e.stopPropagation(),
+      modalOpen: s.modal, sent: s.sent, showForm: !s.sent,
+      isTab1: s.tab === 1, isTab2: s.tab === 2, isTab3: s.tab === 3,
+      tab1: this.modalTab(s.tab === 1), tab2: this.modalTab(s.tab === 2), tab3: this.modalTab(s.tab === 3),
+      setTab1: () => this.setState({ tab: 1 }), setTab2: () => this.setState({ tab: 2 }), setTab3: () => this.setState({ tab: 3 }),
+      send: () => this.setState({ sent: true })
+    };
+  }
+}
+</script>
+</body>
+</html>

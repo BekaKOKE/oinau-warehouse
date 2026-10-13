@@ -1,0 +1,115 @@
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  position: sticky;
+  top: calc(var(--header-height) + var(--space-4));
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.reset {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.group {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+
+.groupTitle {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  color: var(--ink-45);
+  text-transform: uppercase;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.priceRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.apply {
+  margin-top: var(--space-4);
+}
+
+.note {
+  margin-top: var(--space-5);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--surface-tint);
+  border: 1px solid rgba(11, 95, 208, 0.16);
+}
+
+.noteTitle {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.noteText {
+  font-size: 12.5px;
+  color: var(--ink-55);
+  margin-top: 5px;
+  line-height: 1.45;
+}
+
+.noteAction {
+  margin-top: var(--space-3);
+}
+
+/* На узком экране фильтры складываются: они не должны занимать
+   первый экран вместо товаров. */
+.mobileToggle {
+  display: none;
+}
+
+@media (max-width: 960px) {
+  .panel {
+    position: static;
+  }
+
+  .mobileToggle {
+    display: inline-flex;
+    align-items: center;
+    background: transparent;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-md);
+    padding: 7px 13px;
+    cursor: pointer;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--primary);
+  }
+
+  .collapsible {
+    display: none;
+  }
+
+  .collapsibleOpen {
+    display: block;
+  }
+}

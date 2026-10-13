@@ -1,0 +1,202 @@
+/* ------------------------------------------------------------- шапка */
+
+.head {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.headInner {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: var(--space-5) var(--gutter) var(--space-5);
+}
+
+.title {
+  font-size: clamp(26px, 3vw, 36px);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+.subtitle {
+  margin-top: var(--space-2);
+  font-size: var(--text-base);
+  color: var(--ink-55);
+  max-width: 70ch;
+}
+
+.headRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+  margin-top: var(--space-3);
+}
+
+.headSearch {
+  flex: 1 1 280px;
+  max-width: 460px;
+}
+
+/* -------------------------------------------------------------- вкладки */
+
+.tabs {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+  overflow-x: auto;
+  padding-bottom: var(--space-1);
+  scrollbar-width: thin;
+}
+
+.tab {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink-70);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 11px 15px;
+  border-radius: var(--radius-lg);
+}
+
+.tab:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.tabActive {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+.tabActive:hover {
+  color: #fff;
+  border-color: var(--ink);
+}
+
+.tabCount {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  opacity: 0.6;
+}
+
+/* -------------------------------------------------------------- макет */
+
+.layout {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: var(--space-6) var(--gutter) var(--space-8);
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.results {
+  min-width: 0;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+.found {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.foundCount {
+  font-size: var(--text-base);
+  font-weight: 700;
+}
+
+.chips {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* ----------------------------------------------------------- пагинация */
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-top: var(--space-6);
+}
+
+.pages {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.page {
+  min-width: 38px;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-70);
+}
+
+.page:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.pageActive {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+.pageActive:hover {
+  color: #fff;
+  border-color: var(--ink);
+}
+
+.pageDisabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.pageGap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  height: 38px;
+  color: var(--ink-45);
+}
+
+.pageInfo {
+  font-size: 12.5px;
+  color: var(--ink-55);
+}
+
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

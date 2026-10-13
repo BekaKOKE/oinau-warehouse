@@ -1,0 +1,49 @@
+.frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--surface-sunken);
+}
+
+.image {
+  object-fit: cover;
+}
+
+.contain {
+  object-fit: contain;
+}
+
+/* Заглушка в фирменной штриховке — на месте отсутствующего фото. */
+.placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: repeating-linear-gradient(
+    135deg,
+    #eceae5 0 9px,
+    #f5f4f1 9px 18px
+  );
+  color: var(--ink-45);
+  text-align: center;
+  padding: var(--space-3);
+}
+
+.placeholderMark {
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  font-size: 11px;
+  color: var(--primary);
+  opacity: 0.65;
+}
+
+.placeholderLabel {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  overflow-wrap: anywhere;
+}

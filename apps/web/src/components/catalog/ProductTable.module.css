@@ -1,0 +1,324 @@
+/* Таблица товаров раздела. Плоско: границы вместо теней, цифры
+   моноширинные по разрядам, строка — одна позиция. */
+
+.wrap {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  /* Страховка на узких десктопах: таблица прокручивается внутри рамки,
+     а не раздвигает страницу. */
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 10px 12px;
+  background: var(--surface-sunken);
+  border-bottom: 2px solid var(--ink);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--ink-55);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table tbody td {
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.table tbody tr:hover td {
+  background: var(--surface-tint);
+}
+
+.colImage {
+  width: 104px;
+}
+
+.colSku {
+  width: 100px;
+}
+
+.colPrice {
+  width: 96px;
+  text-align: right !important;
+  white-space: nowrap;
+}
+
+.colStock {
+  width: 104px;
+}
+
+/* Заказ в таблице — столбиком: количество, «В корзину», «1 клик». */
+.colOrder {
+  width: 140px;
+}
+
+.thumb {
+  display: block;
+  width: 88px;
+  height: 88px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Кадр миниатюры — квадрат ячейки, а не 4:3 карточки. */
+.frame {
+  height: 100%;
+  aspect-ratio: auto;
+}
+
+.frame > div {
+  padding: 4px;
+  gap: 2px;
+  font-size: 9px;
+}
+
+.sku {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-70);
+  white-space: nowrap;
+}
+
+.name {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--ink);
+}
+
+.name:hover {
+  color: var(--primary);
+}
+
+.features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--ink-55);
+}
+
+.feature {
+  display: flex;
+  gap: 4px;
+}
+
+.feature dt::after {
+  content: ':';
+}
+
+.feature dd {
+  margin: 0;
+  color: var(--ink-70);
+  font-weight: 600;
+}
+
+.price {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.empty {
+  color: var(--ink-faint);
+}
+
+.onRequest {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--warning);
+  white-space: nowrap;
+}
+
+.tierList {
+  display: grid;
+  gap: 2px;
+  list-style: none;
+  padding: 0;
+  font-size: 13px;
+}
+
+.tierList li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.tierQty {
+  color: var(--ink-55);
+}
+
+.tierPrice {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.stock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  background: currentColor;
+}
+
+.success {
+  color: var(--success);
+}
+
+.warning {
+  color: var(--warning);
+}
+
+.muted {
+  color: var(--ink-55);
+}
+
+.order {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.qty {
+  width: 68px;
+  min-height: 36px;
+  padding: 0 8px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  font: inherit;
+  font-size: 14px;
+  text-align: right;
+}
+
+.qty:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -1px;
+}
+
+.add {
+  flex: 1;
+  white-space: nowrap;
+}
+
+.oneClick {
+  flex: none;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------- карточки (телефон) */
+
+.cards {
+  display: none;
+  list-style: none;
+  padding: 0;
+}
+
+.card {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 12px;
+  padding: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+/* В карточке: количество и «В корзину» в строку, «1 клик» — ниже. */
+.cards .order {
+  flex-wrap: wrap;
+}
+
+.cards .qty {
+  flex: 0 0 64px;
+  width: 64px;
+}
+
+.cards .add {
+  flex: 1 1 120px;
+}
+
+.cards .oneClick {
+  flex: 1 1 100%;
+}
+
+.card:last-child {
+  border-bottom: 0;
+}
+
+.cardThumb {
+  display: block;
+  width: 96px;
+  height: 96px;
+  border: 1px solid var(--line);
+  position: relative;
+  overflow: hidden;
+}
+
+.cardBody {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.cardMeta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 10px;
+}
+
+.cardPrice {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.cardUnit {
+  font-size: 12px;
+  color: var(--ink-55);
+}
+
+.table .order {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.table .qty {
+  width: 100%;
+}
+
+@media (max-width: 860px) {
+  .table {
+    display: none;
+  }
+
+  .cards {
+    display: block;
+  }
+}
+
+.swatches {
+  margin-top: 6px;
+}

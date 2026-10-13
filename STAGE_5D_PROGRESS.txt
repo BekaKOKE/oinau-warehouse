@@ -1,0 +1,52 @@
+ЭТАП 5D — MEDIA + CMS BACKEND: ЗАВЕРШЁН
+Дата: 2026-09-11
+
+==================================================
+ИТОГ ПРОВЕРОК
+==================================================
+pytest         642 passed (новых 170: media 57, галерея 40, CMS 55, unit 18)
+ruff check     All checks passed
+ruff format    157 files already formatted
+mypy app       Success: no issues found (старая ошибка storage/client.py
+               исправлена: AioConfig вместо botocore Config)
+alembic check  No new upgrade operations detected (upgrade/downgrade/upgrade проверен)
+
+Как гоняли: см. STAGE_5C_PROGRESS.txt (временный PG 16 на 55432, fakeredis,
+ASCII-копия alembic.ini). В venv доустановлен pillow.
+
+==================================================
+МИГРАЦИЯ
+==================================================
+8b39d8bdc896 (после 02b0358003e8):
+  media_files + original_filename VARCHAR(255), failure_reason VARCHAR(64)
+  content_sections (key UNIQUE + CHECK, data JSONB, updated_by_id FK users)
+
+==================================================
+ФАЙЛЫ (apps/backend, если не указано иное)
+==================================================
+Новые:
+  app/core/text.py                                простой текст без HTML/Cc/bidi
+  app/infrastructure/storage/base.py              протокол ObjectStorage
+  app/infrastructure/storage/s3.py                S3ObjectStorage (R2/MinIO)
+  app/modules/media/{exceptions,integrity,images,urls,queue,audit,
+    repository_admin,schemas_admin,service_admin,service_processing,
+    router_admin}.py
+  app/workers/tasks/media.py                      задача process_media
+  app/modules/content/{__init__,enums,models,fields,schemas_admin,
+    schemas_public,repository,service_admin,service,router_admin,
+    router_public}.py
+  alembic/versions/2026_09_11_0947-8b39d8bdc896_media_metadata_and_content_sections.py
+  tests/media_helpers.py, tests/test_admin_media.py, tests/test_product_images.py,
+  tests/test_content.py, tests/test_text_and_images.py
+  docs/api-media-content.md (корень репозитория)
+Изменённые:
+  app/core/config.py          S3_PUBLIC_ENDPOINT_URL, UPLOAD_MAX_IMAGE_PIXELS,
+                              RATE_LIMIT_MEDIA_UPLOAD
+  app/infrastructure/storage/client.py   AioConfig, path-style, endpoint для presign
+  app/modules/media/enums.py, models.py
+  app/modules/catalog/service.py, schemas.py   изображения через media.urls, width/height
+  app/workers/main.py, app/db/base.py, app/api/v1/admin.py, public.py
+  pyproject.toml (+pillow), tests/conftest.py (фейковые storage/queue)
+  .env.example, infra/docker/compose.dev.yaml, docs/api-public-catalog.md
+
+Права не менялись. Следующий этап не начинался.

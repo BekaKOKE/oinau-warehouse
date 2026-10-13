@@ -1,0 +1,53 @@
+.frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--surface-tint);
+}
+
+.image {
+  object-fit: cover;
+}
+
+.contain {
+  object-fit: contain;
+}
+
+/* Заглушка на месте отсутствующего фото: светлый фон, бледный знак
+   бренда и артикул — видно, какой позиции не хватает изображения. */
+.placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--surface-tint);
+  color: var(--ink-45);
+  text-align: center;
+  padding: var(--space-3);
+}
+
+/* Логотип — фоном: подпись «OINAU PRO» остаётся текстом для чтения
+   с экрана и поиска, но видна как знак. */
+.placeholderMark {
+  width: min(52%, 140px);
+  aspect-ratio: 1000 / 255;
+  background: url('/brand/logo.png') center / contain no-repeat;
+  opacity: 0.22;
+  color: transparent;
+  font-size: 0;
+  line-height: 0;
+  overflow: hidden;
+}
+
+.placeholderLabel {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  overflow-wrap: anywhere;
+}

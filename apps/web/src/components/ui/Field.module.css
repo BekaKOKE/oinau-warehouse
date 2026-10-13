@@ -1,0 +1,118 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.required {
+  color: var(--danger);
+  margin-left: 2px;
+}
+
+/* Рамка 2px, как в макете: поле читается и на белом, и на светлом фоне. */
+.control {
+  width: 100%;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: 0;
+  min-height: 48px;
+  padding: 11px 14px;
+  font-size: 15px;
+  color: var(--ink);
+  transition: border-color 0.15s ease;
+}
+
+.control::placeholder {
+  color: var(--ink-45);
+}
+
+.control:hover {
+  border-color: var(--line-strong);
+}
+
+.control:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.control:focus-visible {
+  outline: none;
+}
+
+textarea.control {
+  min-height: 104px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+select.control {
+  cursor: pointer;
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--ink-55) 50%),
+    linear-gradient(135deg, var(--ink-55) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% + 2px),
+    calc(100% - 13px) calc(50% + 2px);
+  background-size:
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 36px;
+}
+
+.invalid,
+.invalid:hover {
+  border-color: var(--danger);
+}
+
+.invalid:focus {
+  border-color: var(--danger);
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--ink-55);
+}
+
+.error {
+  font-size: 12.5px;
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.checkboxRow:has(input:checked) {
+  font-weight: 600;
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  margin: 0;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.checkboxCount {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--ink-45);
+}

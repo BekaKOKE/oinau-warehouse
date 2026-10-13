@@ -1,0 +1,38 @@
+B2B-каталог OINAU PRO: услуги, таблица товаров, ZIP-импорт — ГОТОВО (2026-09-30)
+
+BACKEND
+- Медиатека: документы PDF/DWG/DXF (app/modules/media/documents.py). Сигнатура проверяется,
+  публичная копия variants/file.<ext> с Content-Disposition (PDF inline, DWG/DXF attachment).
+  Документ — только SCHEME/DRAWING/CERTIFICATE, обложкой быть не может.
+  Хранилище: write(content_disposition), download() потоково.
+- ZIP-импорт: app/modules/imports/bundle_{archive,files,format,plan,schemas,service,template,validator}.py,
+  router_bundle.py, workers/tasks/imports.py (check/apply/cleanup, timeout 1 ч, cron уборки).
+  /api/v1/admin/catalog/bundle-imports: POST (presigned PUT), /{uuid}/check, GET /{uuid},
+  /{uuid}/commit, DELETE /{uuid}, /{uuid}/report, /template, /example, GET (история).
+  IMPORT_BUNDLE_INLINE=true — без воркера (локально).
+- Миграция c4d7e9a1f203 (import_jobs: kind/status/storage_key, sha nullable; content_sections: services).
+- Публичный API: ProductDetail.documents; в списке — ступени цен, характеристики, specs, min_order_qty;
+  фильтр attr=код:slug, GET /public/categories/{slug}/facets, сортировка sku.
+- CMS «Услуги»: /admin/content/services, /public/content/services, данные в seed.
+
+WEB
+- Меню: Каталог · Услуги · Вопросы … Доставка · Контакты; WhatsApp у телефона.
+- /services; таблица товаров раздела (цены «от N», наличие статусом, заказ из строки,
+  «Показать ещё», вид Таблица/Плитка, фасеты, подразделы); на телефоне — карточки.
+- Страница товара: факты (наличие, цвет), таблица цен по количеству, блоки
+  Характеристики / Упаковка / Схема изделия (Открыть, Скачать) / Описание.
+- Главная: три плитки → узкая строка.
+
+ADMIN
+- Импорт/экспорт: вкладки «Импорт Excel» и «Массовый импорт (ZIP)» (?tab=bundle);
+  мастер Файл → Проверка → Предпросмотр → Импорт → Отчёт, отмена, отчёт XLSX.
+- CMS: раздел «Услуги»; галерея товара показывает схемы-документы.
+
+ПРОВЕРКИ: ruff, mypy, alembic check, tsc, eslint, prettier, next build web/admin — чисто.
+web vitest 244, admin vitest 497. Документация: docs/api-catalog-import-export.md (раздел ZIP),
+docs/api-media-content.md, docs/api-public-catalog.md, .env*.example.
+
+ОГРАНИЧЕНИЯ
+- Точный остаток на витрину не выводится (решение пользователя) — только статус.
+- Загрузка документов вручную через галерею админки не сделана (только ZIP-импорт).
+- Живой прогон с R2/MinIO не делался (нет Docker) — поток покрыт тестами с хранилищем в памяти.

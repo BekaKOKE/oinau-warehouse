@@ -1,0 +1,375 @@
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.strong {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.muted {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ---------------------------------------------------------- раскладка */
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  align-items: start;
+  gap: 16px;
+}
+
+.mainColumn,
+.sideColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.status,
+.customer,
+.items,
+.commentsArea,
+.history {
+  min-width: 0;
+}
+
+/* Клиент и его файлы идут одним блоком: это то, что прислал клиент. */
+.customer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/*
+ * Узкий экран: одна лента в порядке работы — статус, клиент, состав,
+ * комментарии, история. Колонки «растворяются» (display: contents),
+ * и порядок задаётся явно.
+ */
+@media (max-width: 1100px) {
+  .layout {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mainColumn,
+  .sideColumn {
+    display: contents;
+  }
+
+  .status {
+    order: 1;
+  }
+
+  .customer {
+    order: 2;
+  }
+
+  .items {
+    order: 3;
+  }
+
+  .commentsArea {
+    order: 4;
+  }
+
+  .history {
+    order: 5;
+  }
+}
+
+/* --------------------------------------------------------------- клиент */
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px 24px;
+  margin: 0;
+}
+
+.facts dt {
+  margin-bottom: 2px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.factWide {
+  grid-column: 1 / -1;
+}
+
+.clientComment {
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--surface-muted);
+  white-space: pre-wrap;
+}
+
+/* --------------------------------------------------------------- статус */
+
+.statusPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.currentStatus {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.statusForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.readOnly {
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--surface-muted);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ------------------------------------------------------------- позиции */
+
+.mobileRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  font-size: 13px;
+}
+
+.totals {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-muted);
+}
+
+.totalRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 500;
+}
+
+.totalValue {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* ------------------------------------------------------- файлы клиента */
+
+.files {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.file {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.fileMark {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.fileBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fileName {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.files + .muted,
+.pageUrl {
+  font-size: 12px;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+/* ---------------------------------------------------------- комментарии */
+
+.comments {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.commentList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.comment {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.commentPublic {
+  border-left-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.commentHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-bottom: 4px;
+}
+
+.commentBody {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.commentForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.commentActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* --------------------------------------------------------------- история */
+
+.timeline {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timelineItem {
+  position: relative;
+  display: flex;
+  gap: 12px;
+  padding-bottom: 14px;
+}
+
+.timelineItem:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  bottom: 0;
+  left: 4px;
+  width: 1px;
+  background: var(--border);
+}
+
+.timelineDot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  margin-top: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.timelineBody {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.timelineStatuses {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-faint);
+}
+
+.historyComment {
+  font-size: 13px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Цвет позиции заявки */
+.color {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}

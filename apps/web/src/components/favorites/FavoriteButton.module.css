@@ -1,0 +1,40 @@
+.button {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--ink-55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.button:hover {
+  color: var(--primary);
+  background: #fff;
+}
+
+.active,
+.active:hover {
+  color: var(--danger);
+}
+
+.inline {
+  position: static;
+  width: 52px;
+  height: 52px;
+  background: var(--surface);
+  border: 2px solid var(--line);
+}
+
+.inline:hover {
+  border-color: var(--primary);
+}

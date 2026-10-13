@@ -1,0 +1,8 @@
+node_modules
+.next
+apps/backend
+pnpm-lock.yaml
+packages/api-types/src/schema.d.ts
+
+# Выгрузка дизайна для внешнего ревью — не исходники проекта.
+design-export

@@ -1,0 +1,239 @@
+# Локальное окружение разработки.
+# Запуск: make up   (из корня репозитория)
+#
+# Секретов здесь нет — всё через .env, который в .gitignore.
+#
+# Профили:
+#   (по умолчанию)  всё окружение: инфраструктура + backend + worker + web + admin
+#   infra           только PostgreSQL, Redis, MinIO и Mailpit — когда backend
+#                   и frontend запускаются на хосте (см. README).
+
+name: oinau-pro
+
+x-backend-env: &backend-env
+  ENV: local
+  DEBUG: 'true'
+  LOG_FORMAT: console
+  POSTGRES_HOST: postgres
+  POSTGRES_PORT: '5432'
+  POSTGRES_USER: ${POSTGRES_USER:-oinau}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-oinau}
+  POSTGRES_DB: ${POSTGRES_DB:-oinau}
+  REDIS_HOST: redis
+  S3_ENDPOINT_URL: http://minio:9000
+  # Presigned URL отдаются браузеру: ему нужен адрес с хоста, а не из сети Docker
+  S3_PUBLIC_ENDPOINT_URL: http://localhost:${MINIO_PORT_HOST:-9000}
+  S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minioadmin}
+  S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+  S3_BUCKET: ${S3_BUCKET:-oinau-media}
+  CDN_BASE_URL: http://localhost:${MINIO_PORT_HOST:-9000}/${S3_BUCKET:-oinau-media}
+  SMTP_HOST: mailpit
+  SMTP_PORT: '1025'
+  # Ссылки в письмах клиенту и в деловых уведомлениях. Браузер ходит
+  # на localhost, поэтому адреса именно такие, а не имена сервисов.
+  PUBLIC_SITE_URL: http://localhost:${WEB_PORT:-3000}
+  PUBLIC_ADMIN_URL: http://localhost:${ADMIN_PORT:-3001}/admin
+  # Telegram и обмен с 1С локально выключены: без реквизитов канал
+  # отдаёт skipped, а обмен отвечает 503. Это рабочее состояние.
+  TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+  TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+  # Тема форумной супергруппы. Пусто = общий поток чата.
+  TELEGRAM_MESSAGE_THREAD_ID: ${TELEGRAM_MESSAGE_THREAD_ID:-}
+  NOTIFY_EMAILS: ${NOTIFY_EMAILS:-}
+  ONE_C_INTEGRATION_ENABLED: ${ONE_C_INTEGRATION_ENABLED:-false}
+  SECRET_KEY: ${SECRET_KEY:-dev-only-not-for-production}
+  CORS_ORIGINS: http://localhost:${WEB_PORT:-3000},http://localhost:${ADMIN_PORT:-3001}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    profiles: ['default', 'infra']
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-oinau}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-oinau}
+      POSTGRES_DB: ${POSTGRES_DB:-oinau}
+      # C-локаль ускоряет индексы; регистронезависимость обеспечивается citext
+      POSTGRES_INITDB_ARGS: '--locale=C --encoding=UTF8'
+    ports:
+      - '${POSTGRES_PORT_HOST:-5432}:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ../../infra/docker/postgres/init.sql:/docker-entrypoint-initdb.d/10-init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-oinau} -d ${POSTGRES_DB:-oinau}']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    profiles: ['default', 'infra']
+    command: ['redis-server', '--appendonly', 'yes']
+    ports:
+      - '${REDIS_PORT_HOST:-6379}:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  # Локальная замена Cloudflare R2. Тот же S3 API — код приложения не меняется.
+  minio:
+    image: minio/minio:latest
+    profiles: ['default', 'infra']
+    command: ['server', '/data', '--console-address', ':9001']
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - '${MINIO_PORT_HOST:-9000}:9000'
+      - '${MINIO_CONSOLE_PORT_HOST:-9001}:9001'
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  # Одноразовый контейнер: создаёт бакет и политику доступа.
+  # Без него изображения товаров не откроются: публичный доступ есть
+  # только у префикса variants/.
+  minio-init:
+    image: minio/mc:latest
+    profiles: ['default', 'infra']
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      S3_BUCKET: ${S3_BUCKET:-oinau-media}
+    entrypoint: ['/bin/sh', '/scripts/init.sh']
+    volumes:
+      - ../../infra/docker/minio/init.sh:/scripts/init.sh:ro
+    restart: 'no'
+
+  # Перехватывает всю исходящую почту. Веб-интерфейс: http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:latest
+    profiles: ['default', 'infra']
+    ports:
+      - '8025:8025'
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ../../apps/backend
+      target: development
+    profiles: ['default']
+    environment:
+      <<: *backend-env
+    ports:
+      - '${BACKEND_PORT:-8000}:8000'
+    volumes:
+      - ../../apps/backend:/app
+      - backend-venv:/usr/local/lib/python3.12/site-packages
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://localhost:8000/health']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  # Фоновые задачи: обработка изображений медиатеки и доставка
+  # уведомлений из notification_outbox.
+  #
+  # Без воркера загруженные картинки остаются в PROCESSING и на сайт
+  # не попадают, а уведомления копятся в очереди неотправленными —
+  # сами заявки при этом создаются нормально.
+  worker:
+    build:
+      context: ../../apps/backend
+      target: development
+    profiles: ['default']
+    command: ['arq', 'app.workers.main.WorkerSettings', '--watch', 'app']
+    environment:
+      <<: *backend-env
+    volumes:
+      - ../../apps/backend:/app
+      - backend-venv:/usr/local/lib/python3.12/site-packages
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ../..
+      dockerfile: infra/docker/node.Dockerfile
+      target: development
+    profiles: ['default']
+    environment:
+      APP_PACKAGE: '@oinau/web'
+      # Браузер ходит на localhost, сервер Next.js — внутрь сети Docker.
+      NEXT_PUBLIC_API_URL: http://localhost:${BACKEND_PORT:-8000}
+      API_INTERNAL_URL: http://backend:8000
+      NEXT_PUBLIC_SITE_URL: http://localhost:${WEB_PORT:-3000}
+      NEXT_PUBLIC_WHATSAPP_NUMBER: ${NEXT_PUBLIC_WHATSAPP_NUMBER:-+77270000000}
+      WATCHPACK_POLLING: 'true'
+    ports:
+      - '${WEB_PORT:-3000}:3000'
+    volumes:
+      - ../..:/repo
+      - node-modules-root:/repo/node_modules
+      - node-modules-web:/repo/apps/web/node_modules
+      - next-cache-web:/repo/apps/web/.next
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  admin:
+    build:
+      context: ../..
+      dockerfile: infra/docker/node.Dockerfile
+      target: development
+    profiles: ['default']
+    environment:
+      APP_PACKAGE: '@oinau/admin'
+      NEXT_PUBLIC_API_URL: http://localhost:${BACKEND_PORT:-8000}
+      API_INTERNAL_URL: http://backend:8000
+      WATCHPACK_POLLING: 'true'
+    ports:
+      - '${ADMIN_PORT:-3001}:3001'
+    volumes:
+      - ../..:/repo
+      - node-modules-root:/repo/node_modules
+      - node-modules-admin:/repo/apps/admin/node_modules
+      - next-cache-admin:/repo/apps/admin/.next
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  redis-data:
+  minio-data:
+  backend-venv:
+  node-modules-root:
+  node-modules-web:
+  node-modules-admin:
+  next-cache-web:
+  next-cache-admin:

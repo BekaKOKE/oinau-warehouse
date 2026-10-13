@@ -1,0 +1,525 @@
+.header {
+  position: relative;
+  z-index: 50;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+/* ----------------------------------------------------- верхняя строка */
+
+.topInner {
+  display: flex;
+  align-items: center;
+  gap: 16px 24px;
+  min-height: 78px;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+.logo {
+  flex: none;
+  display: block;
+  line-height: 0;
+}
+
+.logoImage {
+  display: block;
+  width: auto;
+  height: 38px;
+}
+
+.divider {
+  flex: none;
+  width: 1px;
+  height: 38px;
+  background: var(--line);
+}
+
+.tagline {
+  flex: none;
+  max-width: 210px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--ink-55);
+}
+
+.search {
+  flex: 1;
+  min-width: 220px;
+  max-width: 520px;
+}
+
+.phone {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.phoneNumber {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.phoneNumber:hover {
+  color: var(--primary);
+}
+
+/* Часы из CMS бывают длинными — переносятся, а не съедают место поиска. */
+.whatsapp {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--primary);
+}
+
+.whatsapp:hover {
+  color: var(--primary-dark);
+  text-decoration: underline;
+}
+
+.phoneHint {
+  max-width: 200px;
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--ink-55);
+}
+
+.quick {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 46px;
+  padding: 0 22px;
+  border: 0;
+  background: var(--primary);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.quick:hover {
+  background: var(--primary-dark);
+}
+
+/* Белый квадрат — знак «быстрого заказа» из макета. */
+.quickMark {
+  display: block;
+  flex: none;
+  width: 9px;
+  height: 9px;
+  background: currentColor;
+}
+
+.cart {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 46px;
+  padding: 0 16px;
+  border: 2px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.cart:hover {
+  border-color: var(--primary);
+}
+
+.counter {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 22px;
+  text-align: center;
+}
+
+.iconButton {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.iconButton:hover {
+  background: var(--surface-tint);
+  color: var(--primary);
+}
+
+.burger,
+.searchToggle {
+  display: none;
+}
+
+/* ---------------------------------------------------- строка разделов */
+
+.bar {
+  border-top: 1px solid var(--line);
+}
+
+.barInner {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+/* Меню на всю ширину полосы: слева разделы, справа — «Доставка»
+   и «Контакты», ближе к действиям. */
+.nav {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 2px;
+}
+
+.navGroup {
+  display: flex;
+  gap: 2px;
+}
+
+.navEnd {
+  margin-left: auto;
+  padding-right: var(--space-2);
+  border-right: 1px solid var(--line);
+}
+
+.navLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 46px;
+  padding: 0 18px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.navLink:hover {
+  background: var(--surface-tint);
+  color: var(--ink);
+}
+
+.navLinkActive,
+.navLinkActive:hover {
+  background: var(--navy);
+  color: #fff;
+  font-weight: 600;
+}
+
+.barActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.barLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.barLink:hover,
+.barLink[aria-current='page'] {
+  color: var(--primary);
+  background: var(--surface-tint);
+}
+
+.barCount {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 20px;
+  text-align: center;
+}
+
+.login {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 16px;
+  border: 2px solid var(--ink);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.login:hover {
+  background: var(--ink);
+  color: #fff;
+}
+
+.loginDot {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 10px;
+  height: 10px;
+  background: var(--primary);
+  border: 2px solid var(--surface);
+}
+
+/* ------------------------------------------------------ мобильное меню */
+
+.mobileMenu {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: rgba(16, 22, 43, 0.55);
+}
+
+.mobilePanel {
+  width: min(360px, 88vw);
+  height: 100%;
+  overflow-y: auto;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  padding: 0 16px calc(24px + env(safe-area-inset-bottom, 0px));
+  animation: menuIn 0.2s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@keyframes menuIn {
+  from {
+    transform: translateX(-24px);
+    opacity: 0.4;
+  }
+}
+
+.mobileHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 60px;
+  margin: 0 -16px 12px;
+  padding: 0 8px 0 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.mobileLogo .logoImage {
+  height: 26px;
+}
+
+.mobileQuick {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 48px;
+  margin-bottom: 10px;
+  border: 0;
+  background: var(--primary);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mobileLink {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: 48px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--line);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.mobileLink:hover {
+  background: var(--surface-tint);
+  color: var(--ink);
+}
+
+.mobileLinkActive,
+.mobileLinkActive:hover {
+  background: var(--navy);
+  color: #fff;
+  font-weight: 600;
+}
+
+.mobileSection {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--space-5);
+}
+
+.mobileTitle {
+  padding: 0 12px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--ink-55);
+}
+
+.mobileCount {
+  font-size: 12px;
+  color: var(--ink-45);
+}
+
+.mobilePhone {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.mobileLogin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  border: 2px solid var(--ink);
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* ------------------------------------------------------------ адаптив */
+
+/* Подпись у логотипа уступает место поиску раньше всего остального. */
+@media (max-width: 1360px) {
+  .divider,
+  .tagline {
+    display: none;
+  }
+}
+
+@media (max-width: 1180px) {
+  .phoneHint {
+    display: none;
+  }
+
+  .topInner {
+    gap: 14px 18px;
+  }
+}
+
+@media (max-width: 1040px) {
+  .phone {
+    display: none;
+  }
+}
+
+/* Телефон: одна липкая строка. Разделы — в меню и в нижней панели. */
+@media (max-width: 860px) {
+  .header {
+    position: sticky;
+    top: 0;
+  }
+
+  .topInner {
+    flex-wrap: wrap;
+    gap: 0 4px;
+    min-height: var(--header-height);
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .burger,
+  .searchToggle {
+    display: inline-flex;
+  }
+
+  .burger {
+    margin-left: -10px;
+  }
+
+  .logo {
+    margin-right: auto;
+  }
+
+  .logoImage {
+    height: 28px;
+  }
+
+  .quick,
+  .bar {
+    display: none;
+  }
+
+  .cart {
+    min-height: 44px;
+    padding: 0 12px;
+    border: 0;
+  }
+
+  .cart:hover {
+    background: var(--surface-tint);
+  }
+
+  .cartLabel {
+    display: none;
+  }
+
+  .counter {
+    top: 2px;
+    right: 0;
+    min-width: 18px;
+    height: 18px;
+    line-height: 18px;
+    padding: 0 4px;
+    font-size: 10px;
+  }
+
+  .search {
+    display: none;
+    order: 10;
+    flex: 1 0 100%;
+    max-width: none;
+    margin-top: 8px;
+  }
+
+  .searchOpen {
+    display: flex;
+  }
+}

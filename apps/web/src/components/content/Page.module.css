@@ -1,0 +1,293 @@
+/* Контентные страницы: контакты, доставка, вопросы, избранное, 404, ошибка.
+   Та же система, что у каталога: светлый фон, белые блоки с рамкой,
+   прямые углы, синий акцент. */
+
+.page {
+  padding-top: 18px;
+}
+
+.header {
+  margin-top: 6px;
+  max-width: 820px;
+}
+
+.eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+.title {
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+}
+
+.lead {
+  margin-top: 12px;
+  font-size: var(--text-body);
+  color: var(--ink-55);
+  line-height: 1.6;
+  max-width: 68ch;
+  white-space: pre-line;
+}
+
+.section {
+  margin-top: 36px;
+}
+
+.sectionTitle {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 16px;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 24px;
+}
+
+/* У карточек способов доставки — синий квадрат, как у плиток главной. */
+.card:has(.cardHeading)::before {
+  content: '';
+  display: block;
+  width: 28px;
+  height: 28px;
+  margin-bottom: 16px;
+  background: var(--primary);
+}
+
+.cardTitle {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-55);
+}
+
+.cardText {
+  margin-top: var(--space-2);
+  font-size: 15px;
+  color: var(--ink-70);
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.cardHeading {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.contactList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.contactLabel {
+  font-size: 13px;
+  color: var(--ink-55);
+}
+
+.contactValue {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+  margin-top: 2px;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+a.contactValue:hover {
+  color: var(--primary);
+}
+
+/* ------------------------------------------------------------------ FAQ */
+
+.faq {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 920px;
+}
+
+.faqItem {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  transition: border-color 0.15s ease;
+}
+
+.faqItem[open] {
+  border-color: var(--primary);
+}
+
+.faqQuestion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-height: 62px;
+  padding: 16px 22px;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.4;
+  cursor: pointer;
+  list-style: none;
+}
+
+.faqQuestion::-webkit-details-marker {
+  display: none;
+}
+
+.faqQuestion::after {
+  content: '+';
+  flex: none;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-tint);
+  color: var(--primary);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.faqQuestion:hover {
+  color: var(--primary);
+}
+
+.faqItem[open] .faqQuestion::after {
+  content: '−';
+  background: var(--primary);
+  color: #fff;
+}
+
+.faqAnswer {
+  padding: 0 22px 20px;
+  margin-top: -4px;
+  max-width: 76ch;
+  font-size: 15px;
+  color: var(--ink-70);
+  line-height: 1.7;
+  white-space: pre-line;
+}
+
+/* ------------------------------------------------------------- реквизиты */
+
+.requisites {
+  width: 100%;
+  max-width: 920px;
+  border-collapse: collapse;
+  font-size: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.requisites th,
+.requisites td {
+  text-align: left;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+.requisites th {
+  font-weight: 500;
+  color: var(--ink-55);
+  width: 36%;
+}
+
+.requisites td {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* ---------------------------------------------------------------- CTA */
+
+.cta {
+  margin-top: 48px;
+  background: var(--navy);
+  padding: 30px 32px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5) var(--space-7);
+  flex-wrap: wrap;
+}
+
+.ctaText {
+  max-width: 56ch;
+}
+
+.ctaTitle {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.ctaSubtitle {
+  margin-top: var(--space-2);
+  color: var(--on-navy-45);
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+
+.ctaActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+@media (max-width: 720px) {
+  .title {
+    font-size: 26px;
+  }
+
+  .section {
+    margin-top: 28px;
+  }
+
+  .card {
+    padding: 20px;
+  }
+
+  .requisites th,
+  .requisites td {
+    display: block;
+    width: auto;
+    padding: 10px 16px;
+  }
+
+  .requisites th {
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+
+  .cta {
+    padding: 22px 18px;
+  }
+
+  .ctaActions,
+  .ctaActions > * {
+    width: 100%;
+  }
+}

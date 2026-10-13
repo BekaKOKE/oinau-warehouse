@@ -1,0 +1,105 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--ink-70);
+}
+
+.required {
+  color: var(--danger);
+  margin-left: 2px;
+}
+
+.control {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  padding: 11px 14px;
+  font-size: var(--text-base);
+  color: var(--ink);
+  transition: border-color 0.15s ease;
+}
+
+.control::placeholder {
+  color: var(--ink-45);
+}
+
+.control:hover {
+  border-color: rgba(16, 20, 24, 0.28);
+}
+
+.control:focus {
+  outline: 2px solid var(--primary-bright);
+  outline-offset: 1px;
+  border-color: var(--primary);
+}
+
+textarea.control {
+  min-height: 104px;
+  resize: vertical;
+}
+
+select.control {
+  cursor: pointer;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink-55) 50%),
+    linear-gradient(135deg, var(--ink-55) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% + 2px),
+    calc(100% - 13px) calc(50% + 2px);
+  background-size:
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 36px;
+}
+
+.invalid {
+  border-color: var(--danger);
+}
+
+.invalid:focus {
+  outline-color: var(--danger);
+}
+
+.hint {
+  font-size: var(--text-xs);
+  color: var(--ink-45);
+  font-family: var(--font-mono);
+}
+
+.error {
+  font-size: var(--text-sm);
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  cursor: pointer;
+  font-size: var(--text-base);
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.checkboxCount {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-45);
+}

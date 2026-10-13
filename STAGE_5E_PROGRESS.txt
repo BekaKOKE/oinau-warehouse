@@ -1,0 +1,125 @@
+ЭТАП 5E — EXCEL IMPORT / EXPORT BACKEND: ЗАВЕРШЁН
+Дата: 2026-09-11
+
+==================================================
+ИТОГ ПРОВЕРОК
+==================================================
+pytest         809 passed (было 642, новых 167; падений, ошибок и skip нет)
+                 export 12, preview 53, commit 18, permissions 8,
+                 security 20, round-trip 2, unit (ячейки/запись/ZIP) 54
+ruff check     app + tests + новая миграция: All checks passed
+               (в alembic/env.py и начальной миграции 02b0358003e8 есть
+               2 старых замечания — SIM103 и W291; файлы прошлых этапов
+               не трогались)
+ruff format    184 files already formatted
+mypy app       Success: no issues found in 150 source files
+alembic        upgrade head -> check (No new upgrade operations detected)
+               -> downgrade -1 -> upgrade head -> check: всё чисто
+
+Как гоняли: см. STAGE_5C_PROGRESS.txt (временный PG 16 на 55432, fakeredis,
+ASCII-копия alembic.ini). В venv доустановлены openpyxl, defusedxml,
+types-openpyxl. Полный прогон — около 15 минут.
+
+==================================================
+ЧТО СДЕЛАНО
+==================================================
+Модуль app/modules/imports/ (apps/backend):
+  xlsx_format.py   канонический формат v1: листы и колонки
+  xlsx_reader.py   проверка контейнера (тип по содержимому, ZIP-бомба,
+                   макросы, шифрование, пути) + чтение openpyxl read-only
+  cells.py         разбор ячеек: Decimal через repr(float), bool, int, enum,
+                   тексты по app/core/text.py
+  snapshot.py      снимок каталога за фиксированное число запросов
+  validator.py     проверка в памяти + план; поля проверяются Pydantic-схемами
+                   Admin API (ProductCreate, CategoryCreate, AttributeCreate,
+                   AttributeOptionCreate, PricingUpdate)
+  applier.py       применение плана одной транзакцией, пакетная замена связей,
+                   аудит теми же действиями, что в Admin API
+  service.py       предпросмотр / подтверждение / история
+  export.py        экспорт и шаблон
+  xlsx_writer.py   запись с защитой от formula injection
+  upload.py        multipart: чтение ПОСЛЕ проверки прав, потоковый лимит
+  models.py, schemas.py, repository.py, exceptions.py, issues.py, audit.py,
+  enums.py, router_admin.py
+
+Общий слой (без изменения поведения Admin API):
+  catalog/service_admin_products.py  build_category_links,
+      validate_attribute_value, upsert_product_translations — вынесены
+      из сервиса, их использует и Admin API, и импорт
+  catalog/service_admin.py           upsert_category_translations
+  pricing/service_admin.py           tier_to_dict (формат аудита цен)
+  repository_admin*.py (catalog, pricing)  пакетные delete_*_for,
+      lock_products, list_tiers_for
+Изменённые также: core/config.py (IMPORT_MAX_UNCOMPRESSED_MB,
+  IMPORT_MAX_ROWS_PER_SHEET, IMPORT_PREVIEW_TTL_HOURS,
+  RATE_LIMIT_CATALOG_IMPORT), api/v1/admin.py, db/base.py, pyproject.toml
+  (+openpyxl, +defusedxml, dev: +types-openpyxl; lock-файла в проекте нет —
+  Dockerfile ставит зависимости из pyproject через uv pip), .env.example.
+
+==================================================
+ЭНДПОИНТЫ (/api/v1/admin/catalog)
+==================================================
+  GET  /export                      XLSX каталога          catalog.read
+  GET  /imports/template            пустой шаблон          catalog.read
+  POST /imports/preview             multipart file=        catalog.read, rate limit
+  POST /imports/{uuid}/commit       тот же файл (SHA-256)  catalog.write, rate limit
+  GET  /imports                     история (status, пагинация)  catalog.read
+  GET  /imports/{uuid}              импорт с ошибками      catalog.read
+Права не менялись. MANAGER и VIEWER: экспорт и предпросмотр — да,
+подтверждение — 403 (у них нет catalog.write). Матрица ролей закреплена
+тестом.
+
+==================================================
+МИГРАЦИЯ
+==================================================
+9dba1f2533c1 (после 8b39d8bdc896): таблица import_jobs — kind, status
+(VALID/INVALID/COMMITTED/FAILED), filename, file_size, file_sha256,
+rows_total, products_created/updated/unchanged, error_count,
+warning_count, summary/errors/warnings JSONB, created_by_id,
+committed_by_id, committed_at, failure_code. Сам XLSX не хранится.
+
+==================================================
+ФОРМАТ
+==================================================
+Листы: Products, Prices, ProductAttributes, ProductSpecs, Categories,
+CategoryAttributes, Attributes, AttributeOptions (+ README).
+Ключи: товар — sku, категория — slug, характеристика — code,
+вариант — attribute_code + slug. Внутренних id/UUID в файле нет.
+Сущности создаются/обновляются и никогда не удаляются; связи сущностей из
+файла (категории, цены, характеристики, specs, фильтры категорий)
+заменяются целиком; всё, чего нет в файле, не трогается. Первая категория —
+основная. Неизменённые данные не пишутся (без updated_at и аудита).
+Экспорт -> импорт без правок = ноль изменений (тест сравнивает весь каталог).
+SKU неизменяем: новый артикул = новый товар; «переименование» упирается в
+занятый slug. Остатков в формате нет. Подробно: docs/api-catalog-import-export.md
+
+==================================================
+БЕЗОПАСНОСТЬ
+==================================================
+Тип по содержимому (ZIP + [Content_Types] + main part), отказ .xls/CSV/
+.xlsm/шифрованных; лимит размера UPLOAD_MAX_SIZE_MB по мере чтения тела;
+ZIP-бомба и опасные пути; defusedxml (XXE, billion laughs — тесты);
+формулы, ошибки Excel и даты не принимаются; HTML и управляющие символы
+отвергаются; экспорт — строки только типом s + quotePrefix для = + - @
+(значение не искажается); имя файла очищается; содержимое файла не
+пишется ни в журнал, ни в историю.
+
+==================================================
+ИЗВЕСТНЫЕ ОГРАНИЧЕНИЯ
+==================================================
+- Подтверждение синхронное (для текущего размера каталога — доли секунды);
+  перенос в воркер не меняет контракт. Отмечено в docs/architecture.md
+  как уточнение принципа 3.
+- На подтверждение файл отправляется повторно: сервер его не хранит.
+- Цены — только публичный прайс-лист по умолчанию.
+- Не через Excel: остатки, изображения, stock_display_override, weight_kg,
+  переименование sku / slug категории / кода характеристики, удаление и
+  восстановление сущностей.
+- Обмен slug или external_id между двумя товарами в одном файле
+  отклоняется — выполняется в два импорта.
+- Тексты с HTML, уже сохранённые через Admin API, импорт не примет
+  (экспорт их выгрузит, предпросмотр покажет ошибку).
+- Предпросмотр доступен ролям с catalog.read (в т.ч. MANAGER): так задано
+  требованиями этапа; каталог он не меняет.
+
+Следующий этап не начинался (frontend / Telegram / Email / WhatsApp / 1С).

@@ -1,0 +1,151 @@
+/* Услуги: строгий список, как таблица каталога, — номер, описание,
+   условия и действие в одной строке. Без плиток и иконок. */
+
+.list {
+  margin-top: 28px;
+  border-top: 2px solid var(--ink);
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 260px;
+  gap: 20px 28px;
+  padding: 28px 0;
+  border-bottom: 1px solid var(--line);
+  scroll-margin-top: calc(var(--header-height) + 16px);
+}
+
+.item:has(.media) {
+  grid-template-columns: 56px 200px minmax(0, 1fr) 260px;
+}
+
+.number {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  font-family: var(--font-mono);
+  padding-top: 5px;
+}
+
+.media {
+  border: 1px solid var(--line);
+  background: var(--surface-sunken);
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+}
+
+.image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.summary {
+  margin-top: 8px;
+  color: var(--ink-70);
+  line-height: 1.6;
+  max-width: 68ch;
+  white-space: pre-line;
+}
+
+.details {
+  margin-top: 16px;
+}
+
+.detailsTitle {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--ink-55);
+}
+
+.detailsList {
+  margin-top: 8px;
+  display: grid;
+  gap: 6px;
+  list-style: none;
+  padding: 0;
+}
+
+.detailsList li {
+  position: relative;
+  padding-left: 18px;
+  line-height: 1.45;
+}
+
+.detailsList li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.6em;
+  width: 7px;
+  height: 7px;
+  background: var(--primary);
+}
+
+.aside {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.price {
+  font-weight: 600;
+  line-height: 1.4;
+  padding: 10px 12px;
+  background: var(--surface-tint);
+  border-left: 3px solid var(--primary);
+}
+
+@media (max-width: 1040px) {
+  .item,
+  .item:has(.media) {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+
+  .media {
+    grid-column: 2;
+    max-width: 320px;
+  }
+
+  .aside {
+    grid-column: 2;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .aside > * {
+    flex: 1 1 200px;
+  }
+
+  .price {
+    flex-basis: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .item,
+  .item:has(.media) {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    padding: 22px 0;
+  }
+
+  .media,
+  .aside {
+    grid-column: 1;
+  }
+
+  .title {
+    font-size: 19px;
+  }
+}

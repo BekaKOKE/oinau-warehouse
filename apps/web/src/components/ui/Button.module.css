@@ -1,0 +1,151 @@
+/* Прямые углы и рамка 2px у всех вариантов: кнопка с заливкой и
+   кнопка-обводка одной высоты стоят в ряд без скачка. */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border: 2px solid transparent;
+  border-radius: 0;
+  font-weight: 700;
+  line-height: 1.15;
+  cursor: pointer;
+  text-align: center;
+  white-space: nowrap;
+  text-decoration: none;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.button:disabled,
+.button[aria-disabled='true'] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------- размеры */
+
+.sm {
+  min-height: 38px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0 14px;
+}
+
+.md {
+  min-height: 44px;
+  font-size: 14px;
+  padding: 0 20px;
+}
+
+.lg {
+  min-height: 52px;
+  font-size: 15px;
+  padding: 0 26px;
+}
+
+.block {
+  width: 100%;
+}
+
+/* --------------------------------------------------------------- вид */
+
+.primary {
+  background: var(--primary);
+  color: #fff;
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--primary-dark);
+  color: #fff;
+}
+
+.dark {
+  background: var(--navy);
+  color: #fff;
+}
+
+.dark:hover:not(:disabled) {
+  background: var(--navy-soft);
+  color: #fff;
+}
+
+.secondary {
+  background: var(--surface-tint);
+  color: var(--ink);
+}
+
+.secondary:hover:not(:disabled) {
+  background: #e4ebfa;
+  color: var(--primary-dark);
+}
+
+.outline {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+.outline:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--ink);
+}
+
+.primaryOutline {
+  background: var(--surface);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.primaryOutline:hover:not(:disabled) {
+  background: var(--primary);
+  color: #fff;
+}
+
+.ghost {
+  background: transparent;
+  color: var(--primary);
+  padding-left: 0;
+  padding-right: 0;
+  min-height: 0;
+  border: 0;
+}
+
+.ghost:hover:not(:disabled) {
+  color: var(--primary-dark);
+}
+
+/* На синей и тёмной подложке (hero, полоса артикулов, подвал). */
+.onDark {
+  background: transparent;
+  border-color: #fff;
+  color: #fff;
+}
+
+.onDark:hover:not(:disabled) {
+  background: #fff;
+  color: var(--ink);
+}
+
+.light {
+  background: #fff;
+  color: var(--ink);
+}
+
+.light:hover:not(:disabled) {
+  background: var(--surface-tint);
+  color: var(--ink);
+}
+
+/* Необратимое действие: удаление проекта, позиции. */
+.danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+.danger:hover:not(:disabled) {
+  background: #a92a23;
+  color: #fff;
+}

@@ -1,0 +1,88 @@
+.skeleton {
+  display: block;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, #eceff4 0%, #f6f8fb 50%, #eceff4 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.compact {
+  padding: 24px 16px;
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 6px;
+  border-radius: 50%;
+  background: var(--neutral-soft);
+  color: var(--text-muted);
+}
+
+.compact .icon {
+  width: 36px;
+  height: 36px;
+  margin-bottom: 2px;
+}
+
+.error .icon {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.forbidden .icon {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.title {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.description {
+  max-width: 48ch;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.action {
+  margin-top: 10px;
+}
+
+.pageLoader {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.loaderBlock {
+  margin-top: 12px;
+}

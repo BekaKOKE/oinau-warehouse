@@ -1,0 +1,56 @@
+# --------------------------------------------------------------- секреты
+.env
+.env.*
+!.env.example
+# Шаблон прод-окружения: значения в нём подставные, настоящий
+# .env.production лежит только на сервере и в Git не попадает.
+!.env.production.example
+*.pem
+*.key
+credentials.json
+
+# ---------------------------------------------------------------- Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+*.egg-info/
+dist/
+build/
+
+# ------------------------------------------------------------------ Node
+node_modules/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+.pnpm-store/
+
+# Промежуточный файл генерации типов. Сами типы
+# (packages/api-types/src/schema.d.ts) в Git ЕСТЬ: без них не собирается
+# ни витрина, ни админка, а production-образ строится из чистого клона.
+# Их актуальность проверяет CI (шаг «Типы API актуальны»).
+packages/api-types/openapi.json
+
+# --------------------------------------------------------------- редакторы
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+
+# ------------------------------------------------------------------ прочее
+*.log
+tmp/
+# Локальный снимок Redis: появляется рядом с redis-server и в исходниках не нужен
+dump.rdb
+*.rdb
+# Изображения товаров НИКОГДА не коммитятся: они живут в Object Storage
+apps/backend/static/products/
+apps/web/public/products/
+apps/admin/public/products/

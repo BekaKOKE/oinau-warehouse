@@ -1,0 +1,267 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: var(--navy);
+  border-bottom: 1px solid var(--on-navy-line);
+}
+
+.inner {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: var(--space-3) var(--gutter);
+  min-height: var(--header-height);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+/* ------------------------------------------------------------- логотип */
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: none;
+  color: #fff;
+}
+
+.logo:hover {
+  color: #fff;
+}
+
+.logoMark {
+  width: 38px;
+  height: 38px;
+  flex: none;
+  border-radius: var(--radius-md);
+  background: linear-gradient(160deg, var(--primary-bright), var(--primary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logoText {
+  line-height: 1;
+}
+
+.logoName {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #fff;
+}
+
+.logoName span {
+  color: var(--primary-light);
+}
+
+.logoTagline {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  color: var(--on-navy-45);
+  margin-top: 4px;
+  text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------- навигация */
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex: none;
+}
+
+.navLink {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--on-navy-70);
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  white-space: nowrap;
+}
+
+.navLink:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.navLinkActive {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.navPrimary {
+  background: var(--on-navy-fill);
+  color: #fff;
+  font-weight: 600;
+  padding: 9px 14px;
+}
+
+.navPrimary:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* -------------------------------------------------------------- поиск */
+
+.search {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+/* ------------------------------------------------------------ действия */
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: none;
+  margin-left: auto;
+}
+
+.iconButton {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--on-navy-fill);
+  color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.iconButton:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+.counter {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  border-radius: var(--radius-pill);
+  background: var(--primary);
+  border: 2px solid var(--navy);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loginButton {
+  flex: none;
+}
+
+.burger {
+  display: none;
+}
+
+/* ------------------------------------------------------ адаптивность */
+
+@media (max-width: 1180px) {
+  .nav {
+    display: none;
+  }
+
+  .burger {
+    display: flex;
+  }
+
+  .logoTagline {
+    display: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .inner {
+    flex-wrap: wrap;
+    row-gap: var(--space-3);
+  }
+
+  .search {
+    order: 5;
+    flex: 1 1 100%;
+  }
+
+  .loginButton {
+    display: none;
+  }
+}
+
+/* --------------------------------------------------------- меню на мобильном */
+
+.mobileMenu {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(14, 22, 32, 0.6);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.mobilePanel {
+  width: min(320px, 88%);
+  height: 100%;
+  background: var(--navy);
+  padding: var(--space-5) var(--space-5) var(--space-7);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  overflow-y: auto;
+}
+
+.mobileHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.mobileTitle {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.12em;
+  color: var(--on-navy-45);
+  text-transform: uppercase;
+}
+
+.mobileLink {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--on-navy-line);
+}
+
+.mobileLink:hover {
+  color: var(--primary-light);
+}
+
+.mobileCount {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--on-navy-45);
+  font-weight: 400;
+}
+
+.mobileSection {
+  margin-top: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}

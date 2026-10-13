@@ -1,0 +1,252 @@
+.hero {
+  position: relative;
+  background: var(--navy);
+  overflow: hidden;
+}
+
+/*
+ * Текст и фотография — две колонки одной сетки, а не наложенные слои.
+ *
+ * Раньше текстовый блок был отдельным слоем во всю ширину поверх
+ * фотографии и перехватывал все клики: точки на площадке нажать было
+ * невозможно. Колонки убирают проблему в корне — кликабельно ровно то,
+ * что видно.
+ */
+.inner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(300px, 440px) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-6);
+  /*
+   * Слева текст выровнен по общей сетке сайта, справа фотография уходит
+   * почти к краю экрана. Так снимок заметно крупнее, но заголовок всё
+   * равно стоит ровно под логотипом в шапке.
+   */
+  padding: var(--space-8) 0 var(--space-8) max(var(--gutter), calc((100% - var(--container)) / 2));
+}
+
+.copy {
+  min-width: 0;
+}
+
+/*
+ * Кадр строго в пропорции снимка (1536x1024 = 3:2).
+ *
+ * Он в потоке и виден целиком: ничего не обрезается, а проценты из
+ * lib/hotspots.ts всегда попадают на свои объекты. Пропорция здесь
+ * обязательна — при любой другой `object-fit: cover` подрезал бы снимок
+ * по краям и точки уехали бы с объектов.
+ */
+.media {
+  position: relative;
+  /* Кадр заходит в промежуток сетки: левый край всё равно растворён,
+     а снимок становится крупнее. Текстовую колонку он не задевает. */
+  width: calc(100% + var(--space-6));
+  margin-left: calc(-1 * var(--space-6));
+  /* Верхняя граница, чтобы на широком мониторе hero не занимал экран
+     целиком: высота кадра — это ширина, делённая на 1.5. */
+  max-width: 1180px;
+  justify-self: end;
+  aspect-ratio: 3 / 2;
+  container-type: inline-size;
+  /* Без overflow: hidden — иначе плашки у края кадра обрезались бы. */
+}
+
+/*
+ * Края снимка растворяются в фоне маской, а не затемняющими слоями
+ * поверх. Маска делает сам снимок прозрачным к краям, поэтому переход
+ * бесшовный при любом цвете фона, без видимой рамки и светлых углов
+ * (две маски перемножаются — углы гаснут сами).
+ *
+ * Маска висит только на обёртке снимка. Плашки лежат отдельным слоем
+ * и остаются яркими и нажимаемыми даже там, где фото уже растворилось.
+ */
+.photo {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  --fade-mask:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(0, 0, 0, 0.35) 9%,
+      rgba(0, 0, 0, 0.8) 18%,
+      #000 26%,
+      #000 76%,
+      rgba(0, 0, 0, 0.55) 89%,
+      rgba(0, 0, 0, 0.15) 96%,
+      transparent 100%
+    ),
+    linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(0, 0, 0, 0.2) 7%,
+      rgba(0, 0, 0, 0.65) 16%,
+      #000 27%,
+      #000 72%,
+      rgba(0, 0, 0, 0.45) 87%,
+      rgba(0, 0, 0, 0.1) 96%,
+      transparent 100%
+    );
+  -webkit-mask-image: var(--fade-mask);
+  -webkit-mask-composite: source-in;
+  mask-image: var(--fade-mask);
+  mask-composite: intersect;
+}
+
+.image {
+  object-fit: cover;
+  object-position: center;
+}
+
+/* ------------------------------------------------------------- текст */
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  color: var(--primary-light);
+  border: 1px solid rgba(127, 180, 255, 0.3);
+  padding: 7px 12px;
+  border-radius: var(--radius-md);
+  text-transform: uppercase;
+}
+
+.title {
+  margin-top: var(--space-5);
+  font-size: clamp(30px, 2.9vw, 46px);
+  line-height: 1.06;
+  letter-spacing: -0.025em;
+  font-weight: 800;
+  color: #fff;
+}
+
+.titleAccent {
+  color: #8ec0ff;
+  text-shadow:
+    0 0 22px rgba(127, 180, 255, 0.55),
+    0 0 60px rgba(127, 180, 255, 0.25);
+}
+
+.subtitle {
+  margin-top: var(--space-5);
+  max-width: 46ch;
+  font-size: var(--text-md);
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.66);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 1px;
+  margin-top: var(--space-6);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.stat {
+  background: rgba(14, 22, 32, 0.78);
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  /* Значение над подписью: в разметке первым идёт <dt>, иначе список
+     определений невалиден. */
+  flex-direction: column-reverse;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.statValue {
+  font-size: 24px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.statLabel {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--on-navy-45);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.hint {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+}
+
+.hintDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--primary-light);
+  box-shadow: 0 0 10px var(--primary-light);
+  flex: none;
+}
+
+/* ------------------------------------------------------ адаптивность */
+
+@media (max-width: 1180px) {
+  .inner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-6);
+    padding: var(--space-7) var(--gutter) var(--space-8);
+  }
+
+  /* Сначала текст, потом фотография: заголовок не должен лежать
+     на лице площадки. */
+  .copy {
+    order: 1;
+  }
+
+  /* Снимок во всю ширину экрана, от края до края: растворённые края
+     сливаются с фоном, а не упираются в поля страницы. */
+  .media {
+    order: 2;
+    width: auto;
+    max-width: none;
+    margin-left: calc(-1 * var(--gutter));
+    margin-right: calc(-1 * var(--gutter));
+    justify-self: stretch;
+  }
+
+  .photo {
+    --fade-mask:
+      linear-gradient(90deg, transparent 0%, #000 10%, #000 90%, transparent 100%),
+      linear-gradient(180deg, transparent 0%, #000 12%, #000 86%, transparent 100%);
+  }
+}
+
+@media (max-width: 720px) {
+  .stats {
+    margin-top: var(--space-5);
+  }
+
+  .hint {
+    display: none;
+  }
+}

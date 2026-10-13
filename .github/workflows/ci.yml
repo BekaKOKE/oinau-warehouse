@@ -1,0 +1,250 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: '3.12'
+  NODE_VERSION: '22'
+
+jobs:
+  secrets:
+    name: Поиск секретов
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/backend
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: oinau
+          POSTGRES_PASSWORD: oinau
+          POSTGRES_DB: oinau_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+        ports: ['5432:5432']
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+        ports: ['6379:6379']
+
+    env:
+      ENV: ci
+      POSTGRES_HOST: localhost
+      POSTGRES_USER: oinau
+      POSTGRES_PASSWORD: oinau
+      POSTGRES_DB: oinau_test
+      REDIS_HOST: localhost
+      SECRET_KEY: ci-secret-key-not-used-in-production-0123456789
+      RATE_LIMIT_ENABLED: 'false'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Установка uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: apps/backend/uv.lock
+
+      - name: Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      # Ставим в .venv проекта, а не в системный Python: интерпретатор
+      # раннера помечен externally-managed (PEP 668), и установка в него
+      # запрещена. Состав окружения берётся из apps/backend/uv.lock,
+      # --frozen запрещает молча пересчитать lock под другое разрешение.
+      # Каталог .venv/bin уходит в PATH, поэтому ruff/mypy/alembic/pytest
+      # на шагах ниже — это ровно те версии, что зафиксированы в lock.
+      - name: Зависимости
+        run: |
+          uv sync --frozen --extra dev --python ${{ env.PYTHON_VERSION }}
+          echo "VIRTUAL_ENV=$GITHUB_WORKSPACE/apps/backend/.venv" >> "$GITHUB_ENV"
+          echo "$GITHUB_WORKSPACE/apps/backend/.venv/bin" >> "$GITHUB_PATH"
+
+      - name: Ruff (линтер)
+        run: ruff check app tests --output-format=github
+
+      - name: Ruff (форматирование)
+        run: ruff format --check app tests
+
+      - name: Mypy (типы)
+        run: mypy app
+
+      - name: Проверка миграций
+        # Схема БД и модели не должны расходиться: если autogenerate
+        # находит различия — кто-то забыл создать миграцию.
+        run: |
+          alembic upgrade head
+          alembic check
+
+      - name: Тесты
+        run: pytest --cov --cov-report=xml
+
+  api-types:
+    name: Типы API актуальны
+    runs-on: ubuntu-latest
+    # packages/api-types/src/schema.d.ts генерируется из OpenAPI и лежит
+    # в Git: без него не собирается ни витрина, ни админка, ни их образы.
+    # Здесь проверяется, что закоммиченный файл соответствует коду backend.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: apps/backend/uv.lock
+      - run: uv python install ${{ env.PYTHON_VERSION }}
+      # Та же схема, что и в job Backend: .venv вместо системного Python.
+      - name: Зависимости backend
+        run: |
+          uv sync --frozen --extra dev --python ${{ env.PYTHON_VERSION }}
+          echo "VIRTUAL_ENV=$GITHUB_WORKSPACE/apps/backend/.venv" >> "$GITHUB_ENV"
+          echo "$GITHUB_WORKSPACE/apps/backend/.venv/bin" >> "$GITHUB_PATH"
+        working-directory: apps/backend
+
+      # Версия pnpm не дублируется: единственный источник истины —
+      # поле packageManager в корневом package.json.
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: Зависимости frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Выгрузка OpenAPI без запущенного сервера
+        run: python -m app.scripts.dump_openapi ../../packages/api-types/openapi.json
+        working-directory: apps/backend
+
+      - name: Генерация типов
+        run: pnpm exec openapi-typescript openapi.json -o src/schema.d.ts
+        working-directory: packages/api-types
+
+      - name: Сверка с коммитом
+        run: |
+          if ! git diff --exit-code -- packages/api-types/src/schema.d.ts; then
+            echo "::error::packages/api-types/src/schema.d.ts устарел." \
+                 "Выполните 'make gen-types' и закоммитьте результат."
+            exit 1
+          fi
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Версия pnpm не дублируется: единственный источник истины —
+      # поле packageManager в корневом package.json.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Зависимости
+        run: pnpm install --frozen-lockfile
+
+      - name: Форматирование
+        run: pnpm run format:check
+
+      - name: Типы
+        run: pnpm -r typecheck
+
+      - name: Линтер
+        run: pnpm -r lint
+
+      - name: Тесты
+        run: pnpm -r test
+
+      - name: Сборка
+        run: pnpm -r build
+
+  docker:
+    name: Сборка образов
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Backend (production)
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/backend
+          target: production
+          push: false
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+
+      # Образы фронтенда собираются с подставным доменом: проверяется
+      # сборка, а не конфигурация. NEXT_PUBLIC_* всё равно зашиваются
+      # в бандл, поэтому боевые образы собираются на сервере из .env.production.
+      - name: Витрина (production)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/docker/node.Dockerfile
+          target: production
+          push: false
+          build-args: |
+            APP_PATH=apps/web
+            APP_PACKAGE=@oinau/web
+            NEXT_PUBLIC_API_URL=https://ci.invalid
+            NEXT_PUBLIC_SITE_URL=https://ci.invalid
+            NEXT_PUBLIC_CDN_BASE_URL=https://cdn.ci.invalid
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+
+      - name: Админка (production)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/docker/node.Dockerfile
+          target: production
+          push: false
+          build-args: |
+            APP_PATH=apps/admin
+            APP_PACKAGE=@oinau/admin
+            NEXT_PUBLIC_API_URL=https://ci.invalid
+            NEXT_PUBLIC_SITE_URL=https://ci.invalid
+          cache-from: type=gha,scope=admin
+          cache-to: type=gha,mode=max,scope=admin
+
+      - name: Проверка production-compose
+        # Шаблон прод-окружения используется как источник переменных:
+        # если в compose появилась обязательная переменная, которой нет
+        # в шаблоне, деплой упал бы на сервере — пусть падает здесь.
+        run: |
+          cp .env.production.example .env.production
+          docker compose -f infra/docker/compose.prod.yaml \
+            --env-file .env.production config --quiet
+          rm -f .env.production

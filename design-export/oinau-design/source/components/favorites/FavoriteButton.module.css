@@ -1,0 +1,38 @@
+.button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--ink-45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.button:hover {
+  color: var(--danger);
+  border-color: rgba(200, 52, 44, 0.4);
+}
+
+.active {
+  color: var(--danger);
+  border-color: rgba(200, 52, 44, 0.4);
+}
+
+.inline {
+  position: static;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  border-color: var(--line-strong);
+}

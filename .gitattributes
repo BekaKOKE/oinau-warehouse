@@ -1,0 +1,30 @@
+# Перевод строки.
+#
+# Разработка идёт на Windows, а production — Linux в контейнерах.
+# Файл, попавший в образ с CRLF, ломается по-разному и не всегда очевидно:
+# shell-скрипт отвечает «bad interpreter: /usr/bin/env bash^M», Caddy
+# и docker-entrypoint спотыкаются на невидимом символе в конце строки.
+# Поэтому всё, что исполняется или читается внутри контейнера, хранится
+# и выгружается ТОЛЬКО с LF, независимо от настроек core.autocrlf.
+
+* text=auto eol=lf
+
+*.sh            text eol=lf
+Dockerfile      text eol=lf
+*.Dockerfile    text eol=lf
+Caddyfile       text eol=lf
+Makefile        text eol=lf
+*.service       text eol=lf
+*.timer         text eol=lf
+*.yaml          text eol=lf
+*.yml           text eol=lf
+.env.example            text eol=lf
+.env.production.example text eol=lf
+
+# Двоичные файлы не трогать.
+*.png  binary
+*.jpg  binary
+*.webp binary
+*.ico  binary
+*.zip  binary
+*.xlsx binary

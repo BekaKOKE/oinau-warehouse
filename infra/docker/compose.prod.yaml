@@ -1,0 +1,273 @@
+# Production-окружение OINAU PRO.
+#
+# Запуск на VPS (см. docs/deployment.md):
+#   docker compose -f infra/docker/compose.prod.yaml --env-file .env.production up -d
+#
+# Отличия от compose.dev.yaml принципиальные, а не косметические:
+#   * наружу открыт ТОЛЬКО обратный прокси (80/443). У postgres, redis,
+#     backend и воркера нет ни одного проброшенного порта;
+#   * postgres и redis живут в изолированной сети `internal` без выхода
+#     в интернет — скомпрометированный контейнер не сможет ничего вынести;
+#   * образы собираются в production-stage: без reload, без dev-сервера,
+#     без монтирования исходников;
+#   * миграции выполняются отдельным шагом (профиль `tasks`), а не при
+#     старте backend: несколько реплик устроили бы гонку.
+#
+# Секретов в файле нет — всё приходит из .env.production (он в .gitignore).
+
+name: oinau-pro-prod
+
+# Переменные, одинаковые для backend и воркера: это один и тот же код
+# и одна и та же конфигурация, разойтись они не должны.
+x-backend-env: &backend-env
+  ENV: production
+  DEBUG: 'false'
+  LOG_FORMAT: json
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  POSTGRES_HOST: postgres
+  POSTGRES_PORT: '5432'
+  POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER obyazatelen}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD obyazatelen}
+  POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB obyazatelen}
+  REDIS_HOST: redis
+  REDIS_PORT: '6379'
+
+x-backend-build: &backend-build
+  context: ../../apps/backend
+  target: production
+
+x-restart: &restart
+  restart: unless-stopped
+
+# Без лимита журналы контейнеров съедают диск VPS за несколько месяцев.
+x-logging: &logging
+  logging:
+    driver: json-file
+    options:
+      max-size: '10m'
+      max-file: '5'
+
+services:
+  # ------------------------------------------------------- обратный прокси
+  # Единственная точка входа. TLS выпускается и продлевается автоматически
+  # (ACME), редирект 80 -> 443 встроен в Caddy.
+  proxy:
+    image: caddy:2-alpine
+    <<: [*restart, *logging]
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?SITE_DOMAIN obyazatelen}
+      ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL obyazatelen}
+      # Потолок тела запроса. Загрузка изображений идёт мимо прокси
+      # (presigned PUT прямо в R2), через API идут XLSX-импорт и файл
+      # к запросу КП. Значение с запасом над лимитом вложения: Caddy
+      # считает «MB» как 10^6, и 20MB отрезали бы файл в 20 МиБ раньше
+      # backend. Подробности — в .env.production.example.
+      MAX_BODY_SIZE: ${MAX_BODY_SIZE:-25MB}
+    volumes:
+      - ../../infra/docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks: [edge]
+    depends_on:
+      - web
+      - admin
+      - backend
+    healthcheck:
+      test: ['CMD', 'wget', '--spider', '-q', 'http://127.0.0.1:2019/config/']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # --------------------------------------------------------------- backend
+  backend:
+    build: *backend-build
+    image: oinau-backend:prod
+    <<: [*restart, *logging]
+    environment:
+      <<: *backend-env
+      UVICORN_WORKERS: ${UVICORN_WORKERS:-4}
+    env_file: [../../.env.production]
+    networks: [edge, internal]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # HEALTHCHECK задан в образе (GET /health).
+    stop_grace_period: 20s
+
+  # ---------------------------------------------------------------- worker
+  # Тот же образ, другая команда: уведомления из notification_outbox
+  # и обработка изображений медиатеки.
+  worker:
+    build: *backend-build
+    image: oinau-backend:prod
+    <<: [*restart, *logging]
+    command: ['arq', 'app.workers.main.WorkerSettings']
+    environment:
+      <<: *backend-env
+    env_file: [../../.env.production]
+    # edge нужен воркеру не ради входящих соединений (их у него нет),
+    # а ради исходящих: он кладёт варианты изображений в R2 и отправляет
+    # уведомления в Telegram и по SMTP. Сеть internal выхода наружу не даёт.
+    networks: [edge, internal]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      # arq --check читает ключ здоровья, который воркер обновляет каждые
+      # 30 секунд (health_check_interval в WorkerSettings). Зависший
+      # процесс перестаёт его обновлять и признаётся нездоровым.
+      test: ['CMD', 'arq', '--check', 'app.workers.main.WorkerSettings']
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    stop_grace_period: 60s
+
+  # --------------------------------------------------------------- витрина
+  web:
+    build:
+      context: ../..
+      dockerfile: infra/docker/node.Dockerfile
+      target: production
+      args:
+        APP_PATH: apps/web
+        APP_PACKAGE: '@oinau/web'
+        # NEXT_PUBLIC_* встраиваются в браузерный бандл НА ЭТАПЕ СБОРКИ.
+        # Менять их переменной окружения при запуске бесполезно —
+        # значение уже зашито в JS, который уедет в браузер.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL obyazatelen}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?NEXT_PUBLIC_SITE_URL obyazatelen}
+        NEXT_PUBLIC_CDN_BASE_URL: ${NEXT_PUBLIC_CDN_BASE_URL:?NEXT_PUBLIC_CDN_BASE_URL obyazatelen}
+        NEXT_PUBLIC_WHATSAPP_NUMBER: ${NEXT_PUBLIC_WHATSAPP_NUMBER:-}
+        NEXT_PUBLIC_WHATSAPP_MESSAGE: ${NEXT_PUBLIC_WHATSAPP_MESSAGE:-}
+    image: oinau-web:prod
+    <<: [*restart, *logging]
+    environment:
+      # Серверные компоненты ходят в backend по внутренней сети,
+      # минуя прокси и интернет.
+      API_INTERNAL_URL: http://backend:8000
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
+      PORT: '3000'
+    networks: [edge]
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # --------------------------------------------------------------- админка
+  # Живёт под /admin (basePath в next.config.ts). Отдельный домен не нужен
+  # и намеренно не заводится: cookie refresh-токена привязана к пути
+  # /api/v1/admin/auth того же origin.
+  admin:
+    build:
+      context: ../..
+      dockerfile: infra/docker/node.Dockerfile
+      target: production
+      args:
+        APP_PATH: apps/admin
+        APP_PACKAGE: '@oinau/admin'
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL obyazatelen}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?NEXT_PUBLIC_SITE_URL obyazatelen}
+    image: oinau-admin:prod
+    <<: [*restart, *logging]
+    environment:
+      API_INTERNAL_URL: http://backend:8000
+      PORT: '3000'
+    networks: [edge]
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # ------------------------------------------------------------ PostgreSQL
+  postgres:
+    image: postgres:16-alpine
+    <<: [*restart, *logging]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      POSTGRES_DB: ${POSTGRES_DB:?}
+      POSTGRES_INITDB_ARGS: '--locale=C --encoding=UTF8'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      # Расширения. Их же создаёт первая миграция — файл нужен на случай,
+      # когда БД поднимают под пользователем без права CREATE EXTENSION.
+      - ../../infra/docker/postgres/init.sql:/docker-entrypoint-initdb.d/10-init.sql:ro
+    # Портов НЕТ: доступ к базе только из сети internal.
+    networks: [internal]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    stop_grace_period: 60s
+    shm_size: 256mb
+
+  # ----------------------------------------------------------------- Redis
+  # Хранит очередь arq, окна ограничения частоты и предпросмотры импорта.
+  # appendonly включён намеренно: перезапуск сервера не должен терять
+  # поставленные, но ещё не выполненные задачи обработки изображений.
+  redis:
+    image: redis:7-alpine
+    <<: [*restart, *logging]
+    command:
+      - redis-server
+      - --appendonly
+      - 'yes'
+      - --appendfsync
+      - everysec
+      # Вытеснение ключей ЗАПРЕЩЕНО: очередь задач не кэш, потерянный
+      # ключ — это потерянная задача. При нехватке памяти Redis должен
+      # отвечать ошибкой, чтобы проблему было видно.
+      - --maxmemory-policy
+      - noeviction
+    volumes:
+      - redis-data:/data
+    networks: [internal]
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # -------------------------------------------------------- разовые задачи
+  # Не поднимается вместе со стеком (профиль tasks). Запуск:
+  #   docker compose ... --profile tasks run --rm migrate
+  migrate:
+    build: *backend-build
+    image: oinau-backend:prod
+    profiles: ['tasks']
+    command: ['alembic', 'upgrade', 'head']
+    environment:
+      <<: *backend-env
+    env_file: [../../.env.production]
+    networks: [internal]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: 'no'
+
+networks:
+  # Прокси, витрина, админка и backend.
+  edge:
+    driver: bridge
+  # База, кэш и воркер. internal: true = у контейнеров этой сети нет
+  # маршрута наружу. backend подключён к обеим сетям, поэтому ходит
+  # и в базу, и в R2/Telegram/SMTP.
+  internal:
+    driver: bridge
+    internal: true
+
+volumes:
+  postgres-data:
+  redis-data:
+  caddy-data:
+  caddy-config:

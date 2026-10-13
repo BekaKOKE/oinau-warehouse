@@ -1,0 +1,444 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(16, 22, 43, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.dialog {
+  width: 100%;
+  max-width: 620px;
+  max-height: calc(100vh - 48px);
+  max-height: calc(100dvh - 48px);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+  animation: rise 0.2s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(12px);
+    opacity: 0.4;
+  }
+}
+
+.header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: 20px 26px;
+  background: var(--navy);
+  color: #fff;
+}
+
+.title {
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.subtitle {
+  margin-top: 5px;
+  font-size: 13px;
+  color: var(--on-navy-45);
+}
+
+.close {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--on-navy-line);
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.close:hover {
+  border-color: #fff;
+}
+
+/* ------------------------------------------------------------ вкладки */
+
+.tabs {
+  flex: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.tab {
+  min-height: 50px;
+  padding: 0 10px;
+  border: 0;
+  background: var(--surface-sunken);
+  color: var(--ink-55);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.tab:hover {
+  color: var(--ink);
+}
+
+.tab:focus-visible {
+  outline-offset: -3px;
+}
+
+.tabActive {
+  background: var(--surface);
+  color: var(--primary);
+  box-shadow: inset 0 -3px 0 var(--primary);
+}
+
+.tabActive:hover {
+  color: var(--primary);
+}
+
+/* -------------------------------------------------------------- форма */
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 24px 26px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.info {
+  background: var(--surface-tint);
+  padding: 14px 16px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink-70);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 12px;
+}
+
+.skuList {
+  font-family: var(--font-mono);
+  font-size: 14px;
+}
+
+.note {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-55);
+  text-align: center;
+}
+
+.formError {
+  background: #fdf0ef;
+  border-left: 3px solid var(--danger);
+  padding: 12px 16px;
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.error {
+  font-size: 12.5px;
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* ------------------------------------------------- товар «в 1 клик» */
+
+.product {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) 132px;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid var(--line);
+}
+
+.productThumb {
+  width: 64px;
+  height: 64px;
+  background: var(--surface-tint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--ink-55);
+  text-align: center;
+  word-break: break-all;
+  padding: 4px;
+}
+
+.productThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.productBody {
+  min-width: 0;
+}
+
+.productName {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.productMeta {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--ink-55);
+}
+
+.productQty {
+  align-self: end;
+}
+
+/* --------------------------------------------------------- загрузка */
+
+.dropField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.drop {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 112px;
+  padding: 22px;
+  border: 2px dashed var(--primary-light);
+  background: var(--surface);
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.drop:hover,
+.dropActive {
+  border-color: var(--primary);
+  background: var(--surface-tint);
+}
+
+.drop:focus-within {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.dropInvalid {
+  border-color: var(--danger);
+}
+
+.fileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.dropEmpty,
+.dropFile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.dropTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.dropFileName {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--primary);
+  overflow-wrap: anywhere;
+}
+
+.dropHint {
+  font-size: 12.5px;
+  color: var(--ink-55);
+}
+
+.dropRemove {
+  align-self: flex-start;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-55);
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.dropRemove:hover {
+  color: var(--danger);
+}
+
+/* ------------------------------------------------------------- успех */
+
+.success {
+  overflow-y: auto;
+  padding: 40px 26px 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.successMark {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--success);
+  color: #fff;
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.successText {
+  max-width: 46ch;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-55);
+}
+
+.successText strong {
+  color: var(--ink);
+}
+
+.summary {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--line);
+  padding: 14px 16px;
+}
+
+.summaryWarn {
+  border-color: #efd9b8;
+  background: #fdf8f0;
+}
+
+.summaryTitle {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.summaryList {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.summaryList li {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.summarySku {
+  flex: none;
+  font-weight: 600;
+  color: var(--ink-55);
+}
+
+.summaryName {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.summaryQty {
+  flex: none;
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------ телефон */
+
+@media (max-width: 560px) {
+  .overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .dialog {
+    max-width: none;
+    max-height: 94vh;
+    max-height: 94dvh;
+  }
+
+  .header {
+    padding: 16px;
+  }
+
+  .title {
+    font-size: 19px;
+  }
+
+  .tab {
+    font-size: 13px;
+    padding: 0 4px;
+  }
+
+  .body {
+    padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .row {
+    grid-template-columns: 1fr;
+  }
+
+  .product {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  .productThumb {
+    width: 56px;
+    height: 56px;
+  }
+
+  .productQty {
+    grid-column: 1 / -1;
+  }
+}

@@ -1,0 +1,67 @@
+ЭТАП 5C — REQUESTS BACKEND: ЗАВЕРШЁН
+Дата: 2026-09-11
+
+==================================================
+ИТОГ ПРОВЕРОК
+==================================================
+pytest         472 passed (новых 134: public 72, admin 43, resolver 19)
+
+Fix перед закрытием: POST /public/requests проверяет quantity >= product.
+min_order_qty (Decimal). Нарушение -> 422 quantity_below_minimum, в details
+перечислены все позиции {sku, quantity, min_order_qty}; заявка не создаётся.
+Pricing, stock и схема БД не менялись. +11 интеграционных тестов.
+ruff check     All checks passed
+ruff format    126 files left unchanged
+alembic check  No new upgrade operations detected
+mypy app       1 ошибка — НЕ этап 5C: app/infrastructure/storage/client.py
+               (Media). Свежая установка тянет aiobotocore 3.9, в pyproject
+               только ">=2.15". Файл не трогали.
+
+Как гоняли локально (Docker/Redis на машине нет):
+- временный кластер PostgreSQL 16 из установленных бинарников, в scratchpad,
+  127.0.0.1:55432, роль и БД oinau_test. Рабочий сервер 5432 не трогали;
+- Redis -> fakeredis по TCP (Lua-скрипт rate limiter загружается заранее:
+  TCP-режим fakeredis рвёт соединение после NOSCRIPT);
+- переменные окружения только на процесс; .env не менялся;
+- alembic.ini содержит кириллицу в комментариях, а alembic читает его в
+  ANSI-кодировке Windows (cp1252) -> для прогона использовалась ASCII-копия
+  через ALEMBIC_CONFIG. В Docker/Linux (UTF-8) проблемы нет.
+Кластер и fakeredis после прогона остановлены.
+
+==================================================
+ФАЙЛЫ (apps/backend)
+==================================================
+Новые:
+  app/modules/pricing/resolver.py          resolve_price() — цена по количеству
+  app/modules/requests/audit.py            события аудита (request.*)
+  app/modules/requests/exceptions.py
+  app/modules/requests/schemas_public.py
+  app/modules/requests/schemas_admin.py
+  app/modules/requests/repository.py
+  app/modules/requests/repository_admin.py
+  app/modules/requests/service.py          RequestSubmissionService
+  app/modules/requests/service_admin.py    AdminRequestService
+  app/modules/requests/router_public.py
+  app/modules/requests/router_admin.py
+  tests/test_pricing_resolver.py
+  tests/test_public_requests.py
+  tests/test_admin_requests.py
+  tests/request_helpers.py
+Изменённые:
+  app/api/v1/public.py, app/api/v1/admin.py   подключены роутеры
+  tests/catalog_fixtures.py                    в CatalogFixture добавлен region
+
+Миграций нет. Права не менялись (request.read / request.write уже были).
+
+==================================================
+ЭНДПОИНТЫ
+==================================================
+  POST  /api/v1/public/requests                    rate limit, Idempotency-Key
+  GET   /api/v1/admin/requests                     request.read
+  GET   /api/v1/admin/requests/{id}                request.read
+  PATCH /api/v1/admin/requests/{id}/status         request.write
+  GET   /api/v1/admin/requests/{id}/comments       request.read
+  POST  /api/v1/admin/requests/{id}/comments       request.write
+  GET   /api/v1/admin/requests/{id}/history        request.read
+
+Следующий этап не начинался (Media/CMS/Excel/Frontend/Telegram/Email/1С/оплата).

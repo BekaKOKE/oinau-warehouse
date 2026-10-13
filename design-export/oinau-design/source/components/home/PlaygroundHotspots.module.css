@@ -1,0 +1,232 @@
+/*
+ * Метки на фотографии площадки.
+ *
+ * Слой лежит ВЫШЕ затемнений кадра: иначе плашки приглушались бы теми
+ * же градиентами, что растворяют края снимка, и переставали читаться.
+ *
+ * Размеры привязаны к ширине кадра (cqw), но каждый ограничен снизу:
+ * без минимума на узком экране плашка вырождалась в нечитаемую марку,
+ * в которую невозможно попасть пальцем.
+ */
+
+.layer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  /* Клики принимают сами плашки, а не пустое место между ними. */
+  pointer-events: none;
+}
+
+.anchor {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.card {
+  position: absolute;
+  top: 0;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: clamp(7px, 0.75cqw, 11px);
+  padding: clamp(7px, 0.7cqw, 10px) clamp(10px, 1cqw, 14px);
+  border-radius: clamp(9px, 0.9cqw, 13px);
+  /* Плашка — цель для пальца: не ниже рекомендованных 44 px. */
+  min-height: 44px;
+  overflow: hidden;
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+  pointer-events: auto;
+  color: #fff;
+  text-decoration: none;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    filter 0.18s ease;
+}
+
+.card:hover,
+.card:focus-visible {
+  transform: translateY(-50%) scale(1.06);
+  color: #fff;
+  filter: brightness(1.12);
+  z-index: 1;
+}
+
+.card:active {
+  transform: translateY(-50%) scale(0.98);
+}
+
+.card:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+.alignRight {
+  left: 0;
+}
+
+.alignLeft {
+  right: 0;
+}
+
+.dot {
+  position: relative;
+  width: clamp(9px, 1cqw, 13px);
+  height: clamp(9px, 1cqw, 13px);
+  flex: none;
+  border-radius: 50%;
+}
+
+.pulse {
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  animation: hotspotPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes hotspotPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0.35;
+  }
+}
+
+/* Название и счётчик в две строки: плашка уже, выше и не наезжает
+   на соседние — в одну строку десять меток не помещались. */
+.text {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.name {
+  font-size: clamp(12px, 1.05cqw, 14.5px);
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+  letter-spacing: -0.005em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+}
+
+.count {
+  font-family: var(--font-mono);
+  font-size: clamp(9.5px, 0.82cqw, 11.5px);
+  line-height: 1.15;
+  color: rgba(255, 255, 255, 0.72);
+  white-space: nowrap;
+}
+
+.arrow {
+  position: relative;
+  width: clamp(18px, 1.7cqw, 24px);
+  height: clamp(18px, 1.7cqw, 24px);
+  flex: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(10px, 0.9cqw, 13px);
+  font-weight: 700;
+  color: #0b1118;
+}
+
+/*
+ * На узком экране десять плашек поверх снимка нечитаемы: они наезжают
+ * друг на друга и не попадают под палец. Точки остаются на снимке
+ * ориентирами, а разделы уходят в прокручиваемый ряд под ним.
+ */
+.mobileList {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  .card {
+    /* Остаётся только точка-ориентир: она крупная и заметная. */
+    min-height: 0;
+    padding: 0;
+    gap: 0;
+    border-radius: 50%;
+    backdrop-filter: none;
+    background: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .text,
+  .arrow {
+    display: none;
+  }
+
+  .dot {
+    width: 16px;
+    height: 16px;
+    box-shadow:
+      0 0 0 3px rgba(9, 14, 20, 0.55),
+      0 0 14px currentColor;
+  }
+
+  .mobileList {
+    display: flex;
+    gap: var(--space-2);
+    overflow-x: auto;
+    padding: var(--space-4) var(--gutter);
+    margin: 0;
+    list-style: none;
+    scrollbar-width: none;
+  }
+
+  .mobileList::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobileItem {
+    flex: none;
+  }
+
+  .mobileLink {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    /* Полноценная цель для пальца. */
+    min-height: 44px;
+    padding: 10px 16px;
+    border-radius: var(--radius-pill);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: #fff;
+    font-size: 13.5px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .mobileLink:hover,
+  .mobileLink:active {
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+  }
+
+  .mobileDot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex: none;
+  }
+
+  .mobileCount {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.55);
+  }
+}

@@ -1,0 +1,123 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  text-align: center;
+  white-space: nowrap;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.button:disabled,
+.button[aria-disabled='true'] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------- размеры */
+
+.sm {
+  font-size: var(--text-sm);
+  padding: 8px 13px;
+}
+
+.md {
+  font-size: var(--text-base);
+  padding: 11px 18px;
+}
+
+.lg {
+  font-size: 15px;
+  padding: 15px 26px;
+  border-radius: 11px;
+}
+
+.block {
+  width: 100%;
+}
+
+/* --------------------------------------------------------------- вид */
+
+.primary {
+  background: var(--primary);
+  color: #fff;
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--primary-dark);
+  color: #fff;
+}
+
+.dark {
+  background: var(--ink);
+  color: #fff;
+}
+
+.dark:hover:not(:disabled) {
+  background: var(--primary);
+  color: #fff;
+}
+
+.secondary {
+  background: var(--surface-tint);
+  border-color: rgba(11, 95, 208, 0.3);
+  color: var(--primary);
+}
+
+.secondary:hover:not(:disabled) {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.outline {
+  background: var(--surface);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.outline:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.ghost {
+  background: transparent;
+  color: var(--primary);
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.ghost:hover:not(:disabled) {
+  color: var(--primary-dark);
+}
+
+/* На тёмной подложке (hero, шапка, подвал). */
+.onDark {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+.onDark:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.light {
+  background: #fff;
+  color: var(--ink);
+}
+
+.light:hover:not(:disabled) {
+  background: #e8f0fd;
+  color: var(--ink);
+}

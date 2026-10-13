@@ -1,0 +1,672 @@
+.page {
+  padding-top: 18px;
+}
+
+/* Заголовок над карточкой во всю ширину — длинные названия не ломают колонку. */
+.title {
+  margin: 14px 0 16px;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+}
+
+/* Основной лист: галерея, сводка и описание на одной белой подложке. */
+.sheet {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 28px 32px 32px;
+}
+
+/* Фото — узкая колонка, вся остальная ширина отдана цене и заказу. */
+.main {
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr);
+  gap: 40px;
+  align-items: start;
+}
+
+/* ---------------------------------------------------------- галерея */
+
+.gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.thumbs {
+  order: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.thumb {
+  width: 64px;
+  height: 64px;
+  flex: none;
+  border: 1px solid var(--line);
+  background: var(--surface-tint);
+  overflow: hidden;
+  cursor: pointer;
+  padding: 0;
+  transition: border-color 0.15s ease;
+}
+
+.thumb:hover {
+  border-color: var(--primary-light);
+}
+
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.thumbActive,
+.thumbActive:hover {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.stage {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-tint);
+  border: 1px solid var(--line);
+}
+
+.stageImage {
+  aspect-ratio: 1 / 1;
+}
+
+.stageImage img {
+  padding: 16px;
+}
+
+/* ------------------------------------------------------------ сводка */
+
+.summary {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sku {
+  font-size: 15px;
+  color: var(--ink-55);
+}
+
+.priceMain {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.priceValue {
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+.priceFrom,
+.priceUnit {
+  font-size: 14px;
+  color: var(--ink-55);
+}
+
+.priceOnRequest {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.priceNote {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--ink-55);
+}
+
+/* Цена от объёма — ячейки через разделитель, как в макете. */
+.tiers {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 1px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+
+.tier {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  background: var(--surface);
+}
+
+.tierQty {
+  font-size: 12px;
+  color: var(--ink-55);
+}
+
+.tierPrice {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.skuValue {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* Наличие, единица, бренд — короткая таблица фактов. */
+.keyFacts {
+  margin: 14px 0 20px;
+  border-top: 1px solid var(--line);
+}
+
+.keyFact {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+}
+
+.keyFact dt {
+  color: var(--ink-55);
+}
+
+.keyFact dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* Цены по количеству — ступени колонками, как в прайсе. */
+.tierScroll {
+  overflow-x: auto;
+}
+
+.tierTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.tierCaption {
+  padding-bottom: 8px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--ink-55);
+}
+
+.tierTable th,
+.tierTable td {
+  padding: 10px 12px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.tierTable th {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-70);
+  background: var(--surface-sunken);
+  border-bottom: 2px solid var(--primary);
+}
+
+.tierTablePrice {
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  border-bottom: 1px solid var(--line);
+}
+
+.tierTable td:first-child {
+  color: var(--primary);
+}
+
+/* ------------------------------------------------------------ схема */
+
+.documents {
+  display: grid;
+  gap: 12px;
+  margin-top: var(--space-3);
+  list-style: none;
+  padding: 0;
+}
+
+.document {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+}
+
+.documentPreview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 4 / 3;
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.documentPreview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.documentType {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.documentBody {
+  min-width: 0;
+}
+
+.documentTitle {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.documentMeta {
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--ink-55);
+}
+
+.documentActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.documentLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.documentLink:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* ------------------------------------------------------------ заказ */
+
+.order {
+  max-width: 560px;
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+}
+
+.quantityLabel {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.orderRow {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.quantityControl {
+  flex: none;
+  display: flex;
+  align-items: center;
+  height: 52px;
+  border: 2px solid var(--line);
+  background: var(--surface);
+}
+
+.quantityControl:focus-within {
+  border-color: var(--primary);
+}
+
+.quantityButton {
+  width: 42px;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 18px;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.quantityButton:hover:not(:disabled) {
+  background: var(--surface-tint);
+  color: var(--primary);
+}
+
+.quantityButton:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.quantityInput {
+  width: 64px;
+  height: 100%;
+  border: 0;
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  background: transparent;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.quantityInput:focus {
+  outline: none;
+}
+
+.quantityInput::-webkit-outer-spin-button,
+.quantityInput::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.ctaMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.ctaMain > * {
+  width: 100%;
+}
+
+.oneClick {
+  margin-top: 8px;
+  width: 100%;
+}
+
+.orderNote {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--ink-55);
+}
+
+/* ---------------------------------------------- факты / характеристики */
+
+.facts,
+.specs {
+  align-self: stretch;
+  margin: var(--space-5) 0 0;
+}
+
+.fact,
+.spec {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-5);
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+}
+
+.fact:last-child,
+.spec:last-child {
+  border-bottom: 0;
+}
+
+.fact dt,
+.spec dt {
+  color: var(--ink-55);
+}
+
+.fact dd,
+.spec dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.fact .factText,
+.spec .specText {
+  font-weight: 600;
+}
+
+/* ------------------------------------------- описание и характеристики */
+
+.details {
+  display: grid;
+  gap: 28px;
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+
+.specGroups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px 48px;
+}
+
+.blocks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.block {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 26px 30px;
+}
+
+.blockTitle {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.specs {
+  margin: var(--space-3) 0 0;
+}
+
+.description {
+  margin-top: var(--space-3);
+  max-width: 900px;
+  color: var(--ink-70);
+  font-size: 15px;
+  line-height: 1.65;
+  white-space: pre-line;
+}
+
+.related {
+  margin-top: 48px;
+}
+
+.relatedHead {
+  margin-bottom: 18px;
+}
+
+.relatedTitle {
+  font-size: var(--text-h2);
+  font-weight: 800;
+  letter-spacing: var(--tracking-h2);
+}
+
+@media (max-width: 1040px) {
+  .sheet {
+    padding: var(--space-5);
+  }
+
+  .main {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-5);
+  }
+
+  .gallery,
+  .main > .stage {
+    width: 100%;
+    max-width: 420px;
+  }
+}
+
+@media (max-width: 560px) {
+  .sheet {
+    padding: var(--space-4);
+    margin-left: calc(var(--gutter) * -1);
+    margin-right: calc(var(--gutter) * -1);
+    border-left: 0;
+    border-right: 0;
+  }
+
+  .title {
+    font-size: 21px;
+  }
+
+  .priceValue {
+    font-size: 28px;
+  }
+
+  .orderRow {
+    flex-wrap: wrap;
+  }
+
+  .ctaMain {
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  .quantityControl {
+    flex: 1;
+  }
+
+  .quantityInput {
+    flex: 1;
+  }
+
+  .block {
+    padding: var(--space-5);
+  }
+
+  .blocks,
+  .specGroups {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ------------------------------------------------------------ выбор цвета */
+
+.colors {
+  margin: 0 0 16px;
+  padding: 0;
+  border: 0;
+}
+
+.colorsLegend {
+  margin-bottom: 8px;
+  padding: 0;
+  font-size: 14px;
+  color: var(--ink-70);
+}
+
+.colorsLegend strong {
+  color: var(--ink);
+}
+
+.colorStatus {
+  font-weight: 600;
+}
+
+.colorStatus.success {
+  color: var(--success);
+}
+
+.colorStatus.warning {
+  color: var(--warning);
+}
+
+.colorStatus.muted {
+  color: var(--ink-55);
+}
+
+.colorOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.colorOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 6px 12px 6px 8px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.colorOption:hover {
+  border-color: var(--primary);
+}
+
+.colorOption:focus-within {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+.colorChecked {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+  background: var(--surface-tint);
+}
+
+/* Цвета нет в наличии: выбрать можно — привезём под заказ. */
+.colorOut .colorName {
+  color: var(--ink-55);
+  text-decoration: line-through;
+}
+
+.colorSwatch {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-round);
+}
